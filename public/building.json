@@ -1,0 +1,68 @@
+{
+  "name": "Sample floor \u2014 replace with your floor",
+  "nodes": [
+    {
+      "id": "entrance",
+      "label": "Entrance",
+      "x": 80,
+      "y": 210
+    },
+    {
+      "id": "junction",
+      "label": "Hallway junction",
+      "x": 290,
+      "y": 210
+    },
+    {
+      "id": "east",
+      "label": "East hallway",
+      "x": 560,
+      "y": 210
+    },
+    {
+      "id": "101",
+      "label": "Room 101",
+      "x": 290,
+      "y": 80
+    },
+    {
+      "id": "102",
+      "label": "Room 102",
+      "x": 560,
+      "y": 80
+    },
+    {
+      "id": "103",
+      "label": "Room 103",
+      "x": 560,
+      "y": 340
+    }
+  ],
+  "edges": [
+    [
+      "entrance",
+      "junction"
+    ],
+    [
+      "junction",
+      "east"
+    ],
+    [
+      "junction",
+      "101"
+    ],
+    [
+      "east",
+      "102"
+    ],
+    [
+      "east",
+      "103"
+    ]
+  ],
+  "rooms": [
+    "101",
+    "102",
+    "103"
+  ]
+}
