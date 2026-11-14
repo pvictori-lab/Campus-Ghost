@@ -396,3 +396,451 @@
 
           <path
             d="M83 128 Q93 116 105 123
+               Q95 134 83 128 Z"
+            fill="#cb6b60"
+          />
+
+          <!-- Cheek creases -->
+
+          <path
+            d="M53 101 Q56 96 62 98
+               M115 96 Q121 93 125 98"
+            fill="none"
+            stroke="#29232a"
+            stroke-width="3"
+            stroke-linecap="round"
+          />
+
+          <path
+            d="M51 107 L47 111
+               M122 104 L127 107"
+            fill="none"
+            stroke="#c47b66"
+            stroke-width="3"
+            stroke-linecap="round"
+          />
+        </g>
+      </svg>
+    `;
+
+    scene.setAttribute(
+      "aria-label",
+      "Illustrative checkpoint progress. Not live tracking."
+    );
+
+    let readout = $("motion-status");
+
+    if (!readout) {
+      readout = document.createElement("p");
+      readout.id = "motion-status";
+      readout.setAttribute("aria-live", "polite");
+      scene.after(readout);
+    }
+
+    let visits = 0;
+    let lastSignature = "";
+    let displayed = 0;
+    let frame = null;
+    let celebrationTimer = null;
+
+    function reducedMotion() {
+      return window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+    }
+
+    /*
+     * Keep the entire character inside the scene.
+     * Progress is normalized against the progress element's max.
+     */
+
+    function progressPosition() {
+      const progress = $("progress");
+      const max = Number(progress.max) || 1;
+      const value = Number(progress.value) || 0;
+      const ratio = Math.max(0, Math.min(1, value / max));
+
+      const available = Math.max(
+        0,
+        scene.clientWidth - hero.offsetWidth - 16
+      );
+
+      const start = Math.min(12, available);
+      return start + ratio * (available - start);
+    }
+
+    function moveGhost(target, instant = false) {
+      cancelAnimationFrame(frame);
+      scene.classList.remove("moving");
+
+      if (
+        instant ||
+        reducedMotion() ||
+        Math.abs(target - displayed) < 1
+      ) {
+        displayed = target;
+        hero.style.left = `${target}px`;
+        return;
+      }
+
+      const from = displayed;
+      const started = performance.now();
+      const duration = 1400;
+
+      scene.classList.add("moving");
+
+      function animate(now) {
+        const t = Math.min(1, (now - started) / duration);
+        const ease = t * t * (3 - 2 * t);
+
+        displayed = from + (target - from) * ease;
+        hero.style.left = `${displayed}px`;
+
+        if (t < 1) {
+          frame = requestAnimationFrame(animate);
+        } else {
+          scene.classList.remove("moving");
+        }
+      }
+
+      frame = requestAnimationFrame(animate);
+    }
+
+    function celebrate() {
+      clearTimeout(celebrationTimer);
+      scene.classList.remove("celebrating");
+
+      if (reducedMotion()) {
+        return;
+      }
+
+      void hero.offsetWidth;
+      scene.classList.add("celebrating");
+
+      celebrationTimer = setTimeout(() => {
+        scene.classList.remove("celebrating");
+      }, 1800);
+    }
+
+    function update() {
+      const signature = $("last").textContent.trim();
+
+      if (signature === lastSignature) {
+        return;
+      }
+
+      lastSignature = signature;
+
+      const temperature = $("temperature").textContent;
+      const noCheckpoint = /no checkpoint/i.test(signature);
+      const sameCheckpoint = /same checkpoint/i.test(temperature);
+
+      if (noCheckpoint) {
+        visits = 0;
+
+        clearTimeout(celebrationTimer);
+        scene.classList.remove("celebrating");
+
+        readout.textContent =
+          "Start a journey to record checkpoint progress.";
+
+        moveGhost(progressPosition(), true);
+        return;
+      }
+
+      if (sameCheckpoint) {
+        readout.textContent =
+          "Same checkpoint confirmed again. " +
+          "No new movement recorded.";
+
+        return;
+      }
+
+      visits += 1;
+
+      readout.textContent =
+        `Checkpoint update ${visits} recorded. ` +
+        "The ghost shows reported route progress, " +
+        "not live physical movement.";
+
+      moveGhost(progressPosition());
+
+      if (scene.dataset.mood === "arrived") {
+        celebrate();
+      }
+    }
+
+    /*
+     * Wait until the current app update finishes before reading
+     * the checkpoint text and progress bar together.
+     */
+
+    let updateQueued = false;
+
+    function queueUpdate() {
+      if (updateQueued) {
+        return;
+      }
+
+      updateQueued = true;
+
+      queueMicrotask(() => {
+        updateQueued = false;
+        update();
+      });
+    }
+
+    new MutationObserver(queueUpdate).observe($("last"), {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+
+    displayed = progressPosition();
+    hero.style.left = `${displayed}px`;
+    update();
+
+    let resizeTimer;
+
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+
+      resizeTimer = setTimeout(() => {
+        moveGhost(progressPosition(), true);
+      }, 100);
+    });
+
+    /*
+     * QR scanner.
+     * Successful scans use the existing confirmation button,
+     * so the main app remains responsible for route updates.
+     */
+
+    if ($("scan-now")) {
+      return;
+    }
+
+    const section = document.createElement("section");
+
+    section.innerHTML = `
+      <h2>Scan a checkpoint</h2>
+
+      <p>
+        Scan each code along your route to update progress.
+        No updates occur between scans.
+      </p>
+
+      <button id="scan-now" type="button">
+        Scan QR code
+      </button>
+
+      <button id="scan-stop" type="button" hidden>
+        Stop camera
+      </button>
+
+      <p id="scan-note" role="status">
+        Camera off. You can also select and confirm
+        your checkpoint manually.
+      </p>
+
+      <div id="reader"></div>
+    `;
+
+    $("map").closest("section").before(section);
+
+    const note = $("scan-note");
+    const scanButton = $("scan-now");
+    const stopButton = $("scan-stop");
+
+    let scanner = null;
+    let running = false;
+    let starting = false;
+    let busy = false;
+    let libraryPromise = null;
+
+    async function loadScannerLibrary() {
+      if (window.Html5Qrcode) {
+        return;
+      }
+
+      if (!libraryPromise) {
+        libraryPromise = new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+
+          script.src =
+            "https://unpkg.com/html5-qrcode@2.3.8/" +
+            "html5-qrcode.min.js";
+
+          script.onload = () => {
+            if (window.Html5Qrcode) {
+              resolve();
+            } else {
+              reject(new Error("Scanner did not initialize."));
+            }
+          };
+
+          script.onerror = () => {
+            script.remove();
+            reject(new Error("Scanner download failed."));
+          };
+
+          document.head.append(script);
+        }).catch(error => {
+          libraryPromise = null;
+          throw error;
+        });
+      }
+
+      await libraryPromise;
+    }
+
+    async function halt() {
+      try {
+        if (scanner && running) {
+          await scanner.stop();
+        }
+      } catch {
+        // The camera may already have stopped.
+      } finally {
+        running = false;
+
+        try {
+          scanner?.clear();
+        } catch {
+          // A partially initialized reader may not need clearing.
+        }
+
+        scanner = null;
+        stopButton.hidden = true;
+        scanButton.disabled = false;
+      }
+    }
+
+    function checkpointFromText(text) {
+      const url = new URL(text);
+
+      if (
+        url.origin !== location.origin ||
+        url.pathname !== location.pathname
+      ) {
+        throw new Error(
+          "Use a checkpoint QR code from this site."
+        );
+      }
+
+      const id = url.searchParams.get("checkpoint");
+      const select = $("checkpoint");
+
+      const exists = [...select.options].some(
+        option => option.value === id
+      );
+
+      if (!exists) {
+        throw new Error("Unknown checkpoint.");
+      }
+
+      return id;
+    }
+
+    async function onScan(text) {
+      if (busy || !running) {
+        return;
+      }
+
+      let id;
+
+      try {
+        id = checkpointFromText(text);
+      } catch (error) {
+        note.textContent = error.message;
+        return;
+      }
+
+      busy = true;
+
+      try {
+        const select = $("checkpoint");
+
+        select.value = id;
+        select.dispatchEvent(
+          new Event("change", { bubbles: true })
+        );
+
+        if ($("confirm").disabled) {
+          throw new Error(
+            "The confirmation button is unavailable. " +
+            "Choose your course and destination first."
+          );
+        }
+
+        $("confirm").click();
+
+        await halt();
+
+        note.textContent =
+          "Checkpoint submitted. Review your updated route, " +
+          "then scan again at the next checkpoint.";
+      } catch (error) {
+        note.textContent = error.message || String(error);
+      } finally {
+        busy = false;
+      }
+    }
+
+    scanButton.onclick = async () => {
+      if (starting || running) {
+        return;
+      }
+
+      starting = true;
+      scanButton.disabled = true;
+      note.textContent = "Opening camera…";
+
+      try {
+        await loadScannerLibrary();
+
+        scanner = new window.Html5Qrcode("reader");
+
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 8 },
+          onScan,
+          () => {}
+        );
+
+        running = true;
+        stopButton.hidden = false;
+
+        if (document.hidden) {
+          await halt();
+          note.textContent = "Camera stopped.";
+        } else {
+          note.textContent =
+            "Point your camera at a checkpoint QR code.";
+        }
+      } catch (error) {
+        await halt();
+
+        note.textContent =
+          "Camera unavailable: " +
+          (error.message || String(error)) +
+          ". Allow camera permission or use manual confirmation.";
+      } finally {
+        starting = false;
+      }
+    };
+
+    stopButton.onclick = async () => {
+      await halt();
+      note.textContent = "Camera stopped.";
+    };
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && running) {
+        void halt().then(() => {
+          note.textContent = "Camera stopped.";
+        });
+      }
+    });
+  }
+})();
