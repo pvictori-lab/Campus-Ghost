@@ -725,43 +725,59 @@
       }
     }
 
-    function checkpointFromText(text) {
+ 
+function checkpointFromText(text) {
   const scannedText = String(text ?? "").trim();
 
-  if (!scannedText) {
-    throw new Error("The QR code contains no text.");
+  // Existing Campus Ghost QR codes
+  const qrMappings = {
+    "https://qrco.de/bh6Qux": "Q1",
+    "https://qrco.de/bh6Qv6": "Q2",
+    "https://qrco.de/bh6Qv8": "Q4",
+    "https://qrco.de/bh6QvB": "Q5",
+    "https://qrco.de/bh6QvD": "Q6",
+    "https://qrco.de/bh6QvG": "Q7",
+    "https://qrco.de/bh6QvH": "Q8"
+  };
+
+  let id = qrMappings[scannedText];
+
+  // Also support direct Campus Ghost URLs
+  if (!id) {
+    let url;
+
+    try {
+      url = new URL(scannedText, window.location.href);
+    } catch {
+      throw new Error("Invalid Campus Ghost QR code.");
+    }
+
+    if (
+      url.protocol !== "https:" ||
+      url.hostname !== "campus-ghost.onrender.com" ||
+      !["/", "/index.html"].includes(url.pathname)
+    ) {
+      throw new Error(
+        "Use a checkpoint QR code from this site."
+      );
+    }
+
+    id =
+      url.searchParams.get("checkpoint") ||
+      url.searchParams.get("qr");
   }
 
-  let url;
+  id = String(id ?? "").trim().toUpperCase();
 
-  try {
-    url = new URL(scannedText, window.location.href);
-  } catch {
-    throw new Error("Invalid Campus Ghost QR code.");
-  }
-
-  if (
-    url.origin !== window.location.origin ||
-    url.pathname !== window.location.pathname
-  ) {
-    throw new Error(
-      "Use a checkpoint QR code from this site."
-    );
-  }
-
-  const id = (
-    url.searchParams.get("checkpoint") ||
-    url.searchParams.get("qr") ||
-    ""
-  ).trim().toUpperCase();
-
+  // Verify checkpoint exists in the app
   const select = document.getElementById("checkpoint");
 
-  const exists = [...select.options].some(
-    option => option.value === id
-  );
-
-  if (!exists) {
+  if (
+    !select ||
+    ![...select.options].some(
+      option => option.value === id
+    )
+  ) {
     throw new Error("Unknown checkpoint.");
   }
 
