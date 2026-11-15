@@ -33,4 +33,4 @@ http.createServer(async(req,res)=>{
   if(!path.startsWith(root+'/')&&!path.startsWith(root+'\\')){res.writeHead(403);res.end();return;}
   const content=await readFile(path);res.setHeader('Content-Type',types[extname(path)]||'application/octet-stream');res.end(content);
  }catch(e){res.writeHead(400,{'Content-Type':'application/json'});res.end(JSON.stringify({reply:'Unable to complete request. Navigation still works.',error:e.message}));}
-}).listen(Number(process.env.PORT||3000),'0.0.0.0',()=>console.log('Campus Ghost: http://localhost:3000 — local computer only'));
+}).listen(Number(process.env.PORT||3000),process.env.HOST||'0.0.0.0',()=>console.log(`Campus Ghost: http://localhost:${process.env.PORT||3000} (listening on ${process.env.HOST||'0.0.0.0'})`));

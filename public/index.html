@@ -7,6 +7,7 @@
   <title>Campus Ghost | Halle Library</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="quest-toon.css">
+  <link rel="stylesheet" href="route-encounters.css">
   <style>
     #map {
       display: block;
@@ -63,8 +64,6 @@
 
   <p class="notice">
     Halle Library — Second Floor.
-    Checkpoint-based indoor navigation, not live GPS tracking.
-    Routes must be verified against accessible hallways.
   </p>
 
   <section>
@@ -89,7 +88,7 @@
     </p>
 
     <p id="instruction" aria-live="polite"></p>
-    <p id="last"></p>
+    <p id="last" hidden></p>
 
     <progress
       id="progress"
@@ -103,8 +102,7 @@
     <h2 id="building">Halle Library — Second Floor</h2>
 
     <p>
-      Select where you are and where you want to go.
-      Scan a QR checkpoint to set your starting location.
+      Choose your destination below.
     </p>
 
     <div class="map-controls">
@@ -113,37 +111,40 @@
         <select id="destination"></select>
       </label>
 
-      <label>
-        Starting checkpoint
-        <select id="checkpoint"></select>
-      </label>
     </div>
 
-    <button id="confirm" type="button">
-      Confirm Selected Checkpoint
-    </button>
+    <!-- Compatibility controls used by the existing QR scanner and map markers. -->
+    <button id="confirm" type="button" hidden>Confirm selected checkpoint</button>
 
     <button id="reset" type="button">
       Start New Journey
     </button>
 
-    <svg
+    <div class="navigation-report" aria-label="Confirmed journey state">
+      <p><strong>You’re at:</strong> <span id="confirmed-checkpoint">Scan a code or enter a checkpoint</span></p>
+      <p><strong>Next stop:</strong> <span id="next-checkpoint">Choose your starting location</span></p>
+      <p><strong>Destination:</strong> <span id="journey-destination"></span></p>
+      <button id="confirm-next" type="button" disabled hidden>I’ve reached the next stop</button>
+    </div>
+
+    <div id="encounter-map-frame"><svg
       id="map"
       viewBox="0 0 600 750"
       role="img"
       aria-label="Interactive Halle Library second floor map">
-    </svg>
+    </svg><div id="encounter-layer"></div></div>
+    <p id="encounter-status" role="status"></p>
 
     <p class="notice">
       Green markers indicate QR checkpoints.
       Orange lines indicate calculated routes.
-      Your position updates when you scan or confirm
-      a checkpoint.
+      Blue ring = you’re at. Purple dashed ring = next stop.
     </p>
   </section>
 
-  <section>
-    <h2>QR Checkpoint Setup</h2>
+  <section><details>
+    <summary>Checkpoint links</summary>
+    <label>Checkpoint for link <select id="checkpoint" aria-label="Checkpoint for link"></select></label>
 
     <p>
       Select a checkpoint to generate its website link.
@@ -165,16 +166,16 @@
       Place printed QR codes only at verified locations
       with library permission.
     </p>
-  </section>
+  </details></section>
 
   <section>
     <h2>Ask Campus Ghost 👻</h2>
 
     <p>
-      Have a question about navigating campus?
-      Ask your ghost assistant!
+      Ask about the server's fictional sample courses. This chat does not know your library route.
     </p>
 
+    <label>Sample course for chat <select id="chat-course" aria-label="Sample course for chat"></select></label>
     <form id="chat">
       <input
         id="question"

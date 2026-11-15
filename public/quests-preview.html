@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Campus Ghost · Local integration preview</title>
+  <!-- Intentionally no quests.css in the host document. -->
+  <link rel="stylesheet" href="quests-preview.css">
+  <script type="module" src="quests-preview.js"></script>
+</head>
+<body>
+  <header class="host-header"><span class="host-kicker">Local integration sandbox</span><h1>A quest, inside your campus experience.</h1><p>This light, serif host page stays visually separate from the dark quest panel.</p></header>
+  <main class="host-grid">
+    <section class="host-card" aria-labelledby="mock-room-title">
+      <span class="host-kicker">Fictional demo context</span><h2 id="mock-room-title">The quiet study room</h2>
+      <p>A placeholder for the room page. This preview does not load or alter the map, QR scanner, navigator, or Pat’s ghost character.</p>
+      <dl><dt>Room ID</dt><dd>demo-study-room-101</dd><dt>Ghost ID</dt><dd>demo-popup-ghost</dd></dl>
+      <button id="open-quest" type="button" aria-haspopup="dialog" aria-controls="quest-dialog">Quest ghost</button>
+      <p id="host-status" role="status">Panel closed. Open the ghost’s offer to begin.</p>
+      <p class="host-xp">Saved quest XP: <strong id="host-xp">Open the panel to read</strong></p>
+      <p>Try a failed trivia attempt, a random game, or a complete ten-answer streak. Closing never clears saved rewards. All room and ghost identifiers here are mock data.</p>
+    </section>
+    <aside class="host-card host-debug" aria-labelledby="debug-title">
+      <h2 id="debug-title">Integration debug</h2><p>Real lifecycle events and callbacks, newest first. XP is already awarded by the module.</p>
+      <pre id="quest-debug" role="log" aria-live="polite" aria-relevant="text">No events yet.</pre>
+      <p class="host-note">This preview shares localStorage with the standalone quest page on this origin. History remains after closing, reopening, or refreshing. Blocked storage falls back to panel memory with a warning.</p>
+    </aside>
+  </main>
+  <dialog id="quest-dialog" aria-labelledby="quest-dialog-title">
+    <div class="host-dialog-toolbar"><h2 id="quest-dialog-title">Quest panel · Demo ghost</h2><button id="close-quest" type="button">Close quest panel</button></div>
+    <div id="quest-panel-slot"></div>
+  </dialog>
+  <footer class="host-footer"><p>Local preview only · <a href="quests.html">Open the standalone quest page</a></p></footer>
+</body>
+</html>

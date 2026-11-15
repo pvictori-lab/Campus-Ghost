@@ -425,7 +425,7 @@
 
     scene.setAttribute(
       "aria-label",
-      "Illustrative checkpoint progress. Not live tracking."
+      "Journey progress"
     );
 
     let readout = $("motion-status");
@@ -436,6 +436,7 @@
       readout.setAttribute("aria-live", "polite");
       scene.after(readout);
     }
+    readout.hidden = true;
 
     let visits = 0;
     let lastSignature = "";
@@ -626,21 +627,26 @@
       <h2>Scan a checkpoint</h2>
 
       <p>
-        Scan each code along your route to update progress.
-        No updates occur between scans.
+        Your location updates when you scan a code or confirm a checkpoint.
       </p>
 
-      <button id="scan-now" type="button">
+      <div class="checkpoint-actions"><button id="scan-now" type="button">
         Scan QR code
       </button>
+      <button id="checkpoint-code-toggle" type="button" aria-expanded="false" aria-controls="checkpoint-code-form">Enter checkpoint code</button>
 
       <button id="scan-stop" type="button" hidden>
         Stop camera
-      </button>
+      </button></div>
+
+      <form id="checkpoint-code-form" class="checkpoint-entry" hidden novalidate>
+        <label for="checkpoint-code">Checkpoint code</label>
+        <div class="checkpoint-entry-controls"><input id="checkpoint-code" type="text" placeholder="e.g. Q4" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" aria-describedby="checkpoint-code-feedback"><button id="checkpoint-code-confirm" type="submit">Confirm location</button></div>
+        <p id="checkpoint-code-feedback" role="status" aria-live="polite"></p>
+      </form>
 
       <p id="scan-note" role="status">
-        Camera off. You can also select and confirm
-        your checkpoint manually.
+        Scan a code or enter its checkpoint code.
       </p>
 
       <div id="reader"></div>
@@ -651,12 +657,15 @@
     const note = $("scan-note");
     const scanButton = $("scan-now");
     const stopButton = $("scan-stop");
+    scanButton.disabled=document.documentElement.dataset.questPaused==='true';
+    document.dispatchEvent(new CustomEvent('campus-checkpoint-entry-ready'));
 
     let scanner = null;
     let running = false;
     let starting = false;
     let busy = false;
     let libraryPromise = null;
+    let navigationPauseVersion = 0;
 
     async function loadScannerLibrary() {
       if (window.Html5Qrcode) {
@@ -712,12 +721,11 @@
 
         scanner = null;
         stopButton.hidden = true;
-        scanButton.disabled = false;
+        scanButton.disabled = document.documentElement.dataset.questPaused === "true";
       }
     }
 
-    
-function checkpointFromText(text) {
+    function checkpointFromText(text) {
   const scannedText = String(text ?? "").trim();
 
   if (!scannedText) {
@@ -761,11 +769,9 @@ function checkpointFromText(text) {
 }
 
     async function onScan(text) {
-      
-if (busy || (!running && !starting)) {
-  return;
-}
-
+      if (busy || (!running && !starting) || document.documentElement.dataset.questPaused === "true") {
+        return;
+      }
 
       let id;
 
@@ -793,13 +799,12 @@ if (busy || (!running && !starting)) {
           );
         }
 
-        $("confirm").click();
+        $('confirm').dataset.confirmationMethod='qr';
+        try { $('confirm').click(); } finally { delete $('confirm').dataset.confirmationMethod; }
 
         await halt();
 
-        note.textContent =
-          "Checkpoint submitted. Review your updated route, " +
-          "then scan again at the next checkpoint.";
+        note.textContent = "Checkpoint confirmed.";
       } catch (error) {
         note.textContent = error.message || String(error);
       } finally {
@@ -808,60 +813,55 @@ if (busy || (!running && !starting)) {
     }
 
     scanButton.onclick = async () => {
-      if (starting || running) {
+      if (starting || running || document.documentElement.dataset.questPaused === "true") {
         return;
       }
 
       starting = true;
+      const startVersion = navigationPauseVersion;
       scanButton.disabled = true;
       note.textContent = "Opening camera…";
 
       try {
         await loadScannerLibrary();
 
+        if(document.documentElement.dataset.questPaused==='true'||startVersion!==navigationPauseVersion)return;
+
         scanner = new window.Html5Qrcode("reader");
+        const sessionScanner = scanner;
+        let startupScan = null;
+        const scannerConfig = {fps:10};
+        if(window.Html5QrcodeSupportedFormats?.QR_CODE !== undefined)scannerConfig.formatsToSupport=[window.Html5QrcodeSupportedFormats.QR_CODE];
 
-       
-
-await scanner.start(
-  { facingMode: "environment" },
-  {
-    fps: 10,
-    formatsToSupport: [
-      window.Html5QrcodeSupportedFormats.QR_CODE
-    ]
-  },
- 
-(decodedText) => {
-  note.textContent = "QR DETECTED: " + decodedText;
-  console.log("QR CODE DETECTED:", decodedText);
-  onScan(decodedText);
-},
-
-  () => {
-    // Frames without a QR code are normal.
-  }
-);
-
-
+        await scanner.start(
+          { facingMode: "environment" },
+          scannerConfig,
+          text => {
+            if(sessionScanner!==scanner||startVersion!==navigationPauseVersion)return;
+            note.textContent='QR code detected. Checking your checkpoint...';
+            if(starting&&!running){startupScan=text;return;}
+            return onScan(text);
+          },
+          () => {}
+        );
 
         running = true;
         stopButton.hidden = false;
 
-        if (document.hidden) {
+        if (document.hidden || document.documentElement.dataset.questPaused === "true" || startVersion!==navigationPauseVersion) {
           await halt();
           note.textContent = "Camera stopped.";
         } else {
           note.textContent =
             "Point your camera at a checkpoint QR code.";
+          if(startupScan!==null)await onScan(startupScan);
         }
       } catch (error) {
         await halt();
 
-        note.textContent =
-          "Camera unavailable: " +
-          (error.message || String(error)) +
-          ". Allow camera permission or use manual confirmation.";
+        console.warn('Checkpoint camera unavailable',error);
+        note.textContent = "Camera unavailable. Enter the checkpoint code instead, or try again after allowing camera access.";
+        if($('checkpoint-code-form').hidden)$('checkpoint-code-toggle').click();
       } finally {
         starting = false;
       }
@@ -871,6 +871,11 @@ await scanner.start(
       await halt();
       note.textContent = "Camera stopped.";
     };
+
+    document.addEventListener('campus-navigation-pause', async event => {
+      if(event.detail.paused){navigationPauseVersion++;if(!starting)await halt();note.textContent='Camera paused for the quest. Resume scanning after returning to your route.';}
+      scanButton.disabled=document.documentElement.dataset.questPaused==='true';
+    });
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && running) {

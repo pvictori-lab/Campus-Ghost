@@ -1,0 +1,25 @@
+﻿# Checkpoint confirmation
+
+Open the locally running app and refresh with Ctrl+F5 after updating its source.
+
+1. Choose **Start New Journey** and destination Q5.
+2. Beside **Scan QR code**, choose **Enter checkpoint code**. Type `  q8  `, then **Confirm location** or press Enter. The readable name Entrance To Floor 2 (Q8) appears.
+3. Enter `Q3`: a helpful inline error appears and Q8 remains current. Enter `q8` again: already-current feedback appears without movement, saving, or another encounter.
+4. Use **I've reached Atrium East** or enter/scan Q4. One quest opens. Complete it or choose **Not now**.
+5. Use **I've reached Room 217 (Faculty)**. The app shows **You've arrived!** and hides the next-stop button. Existing XP remains intact.
+
+## Behavior
+
+The ordinary status fields are **You're at**, **Next stop**, and **Destination**. One explanation is shown: **Your location updates when you scan a code or confirm a checkpoint.** Confirmation is a student report, never automatic location detection.
+
+Codes are trimmed and matched case-insensitively against actual building nodes with qrCodeId. Existing codes are Q1, Q2, Q4, Q5, Q6, Q7, and Q8; missing Q3 and corridor-only N10 are rejected. Errors change no location, route, navigation record, or reward. Success uses the same confirmCheckpoint handler as QR scans and shows the readable checkpoint name. Camera failure opens the code form and leaves the fallback available.
+
+The next-stop button reports only the displayed next mapped stop. It is hidden before starting, at arrival, or when no next stop exists. Its legacy internal method tag remains private; developer/demo explanations are not shown to students.
+
+The old selector is only in collapsed Checkpoint links tools; its hidden compatibility confirm button remains for the QR callback. These are not an additional ordinary student confirmation path. Form disclosure, labels, inline live feedback, focus states, native Enter submission, and mobile wrapping are supported.
+
+During a quest the navigation/code controls pause, and cleanup restores focus to the next action. A repeated current-location report cannot advance progress or trigger an encounter. Route changes cancel old panels and callbacks. A new navigation trip does not clear quest XP.
+
+## Checks
+
+`npm.cmd test` covers case/whitespace normalization, valid and invalid codes, unchanged state on repeats/errors, camera failure, QR confirmations, saved progress, arrival, and quests. The optional isolated browser check additionally exercises native Enter, viewport bounds, camera callbacks, focus restoration, and a full journey. Physical-camera and assistive-technology checks still require a manual device pass.

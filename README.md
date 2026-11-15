@@ -1,37 +1,66 @@
-# Campus Ghost — runnable one-floor demo
+﻿# Campus Ghost
 
-## Start on Windows
-1. Extract this ZIP.
-2. Open PowerShell in the extracted folder that contains `package.json` and `server.mjs`.
-3. Run `npm.cmd start`.
-4. Open http://localhost:3000 in your browser.
+A checkpoint-based Halle Library navigation prototype with a navigator ghost, one optional quest encounter per journey, and three interactive games.
 
-Requires a modern Node.js with `--env-file-if-exists` (the user's installed Node 26 supports this). No package installation or external dependencies needed. Stop with Ctrl+C. Server binds to this computer only.
+Location changes only when a student scans a checkpoint or confirms one. This is not live indoor tracking. Map routes and room access must be verified on site.
 
-## Included
-Animated SVG ghost; schematic one-floor map; course cards; fewest-segment graph routing; student-confirmed progress; local summary fallback; optional OpenAI Responses API connection.
+## Run locally
 
-This is starter code, not a production product. It has not been browser-tested in this environment. All locations, courses, and meetings are fictional. It does not track position. Map points are manually entered. Route steps update only on confirmation. Routes minimize number of connections, not physical distance. Next-class scheduling, QR codes, voice, AR, accounts, and distances are not implemented.
+Tested with Node 26. No dependencies need installing.
 
-## Edit floor
-Edit `public/building.json`: nodes have unique IDs, labels and SVG x/y coordinates; edges are bidirectional connected ID pairs; rooms lists destination node IDs. Keep coordinates within the map's 720 by 410 viewBox, or change it in index.html. Every referenced node must exist. Walk and verify connections before presenting them as real. This schematic does not render walls or prove accessibility. Add measured distances and weighted routing later if needed.
+```powershell
+$env:HOST = '127.0.0.1'
+$env:PORT = '3002'
+npm.cmd start
+```
 
-## Edit courses
-Edit `public/courses.json`. Each roomId must appear in building.rooms. Milestones are text labels, not automatically calculated deadlines. Do not enter private student records: public JSON is visible to browser users.
+Open **http://localhost:3002/**. Stop with Ctrl+C. If Node is not on PATH, run `& 'C:\Program Files\nodejs\node.exe' server.mjs` from the repository directory after setting the variables above.
 
-## Optional AI
-Copy `.env.example` to `.env`, enter your API key and a model accessible to your API project, then restart the server. Never share or commit `.env`. No API key is required for maps or local course summaries. The default model is configurable and availability is not guaranteed. AI requests can incur charges. This demo sends the selected fictional course and question to OpenAI; do not send sensitive information.
+The default server bind remains `0.0.0.0` for compatibility with the existing hosting setup; `HOST` overrides it for local-only use. This change does not deploy the application.
 
-The AI does not calculate routes or track location. The server loads course facts from its own data file. Without an API key, questions return a clearly labeled local summary.
+## Try a complete journey
 
-## GitHub
-Upload source files including hidden .gitignore and .env.example, not .env. GitHub stores the source; GitHub Pages cannot run this Node server. Run locally for the hackathon. Do not expose this demo server publicly without authentication/rate limits and further security review.
+1. Choose **Start New Journey** and keep destination **Room 217 (Faculty), Q5**.
+2. Choose **Enter checkpoint code**, type `q8`, and select **Confirm location** (or press Enter).
+3. Check **You're at**, **Next stop**, and **Destination**. The orange route passes through Q4.
+4. Choose **I've reached Atrium East** to report Q4, or scan/enter its code. One quest ghost opens its challenge.
+5. Play trivia, or choose **Give me a game instead**. Complete the challenge or choose **Not now**.
+6. Navigation resumes at Q4. Choose **I've reached Room 217 (Faculty)** to arrive at Q5. No second encounter appears in that journey.
 
-## Test checklist
-- Start app and select all three courses.
-- Route entrance to each room; confirm each checkpoint.
-- Reset after selecting a different starting point.
-- Confirm start equals destination works.
-- Try chat without a key; verify local summary label.
-- If configuring AI, test both valid credentials and failure.
-- Verify all replaced floor connections in person.
+Reconfirming the current checkpoint does not count as movement. Unknown typed codes leave location and route unchanged. The code-entry fallback remains available if camera access fails.
+
+## Quests
+
+- **Trivia:** 10 distinct random questions from a 36-question bank. Ten correct answers in a row complete the challenge; one wrong answer ends the attempt.
+- **Haunted Room Escape:** inspect a fictional room, collect clues, solve two connected locks, and escape.
+- **Potion Panic:** recreate ordered recipes across five increasingly difficult rounds.
+- **Ghost Signal:** repeat five growing sequences using labeled shapes, touch/click, or number keys.
+
+Rewards are granted only on the first completion of each stable challenge ID. Previously earned XP survives retries, navigation resets, exits, and reloads. Storage belongs to the exact browser origin: localhost:3002 and localhost:3000 have separate progress. The app never clears the other origin's rewards.
+
+Standalone quests: `/quests.html`. Isolated integration example: `/quests-preview.html`. The main app's quest panel is an iframe so quest styles do not change the map page.
+
+## Checks
+
+```powershell
+npm.cmd test
+# Or:
+& 'C:\Program Files\nodejs\node.exe' --test
+```
+
+The 36 automated tests cover the navigation/QR confirmation path, code entry, route geometry, full journeys, encounter consumption across reloads, cancellation, stale callbacks, reward preservation, all games, and HTTP assets. Camera hardware is mocked; printed QR decoding and assistive-technology behavior still need device testing.
+
+`tests/browser-journey.mjs` additionally verifies the live app in an isolated Edge/Chromium debugging session, including native Enter submission and desktop/mobile viewport bounds. See [QUESTS-HANDOFF.md](QUESTS-HANDOFF.md) for setup. Browser profiles and generated screenshots are excluded from Git.
+
+## Integration and data
+
+- [Quest interface, content schema, rewards, and lifecycle](QUESTS-HANDOFF.md)
+- [Checkpoint confirmation behavior and manual checks](CHECKPOINT-CONFIRMATION.md)
+- `public/building.json`: James's original 600 x 750 Halle map graph and existing QR IDs. The floor images and Pat's original SVG artwork/CSS are retained.
+- `public/quests.json`: validated, predefined trivia content; the games need no OpenAI or other API.
+
+Because `rooms` is empty, encounter origins use existing QR checkpoint nodes, never invented rooms. James can mark verified existing entrance nodes with `encounterOrigin: true`; if any are marked, only those origins are used. `encounterOrigin: false` excludes a checkpoint from fallback selection.
+
+## Optional course chat
+
+Copy `.env.example` to `.env`, configure a server-side API key/model if desired, then restart. Never commit `.env` or real keys. Chat uses the existing `POST /api/ghost` endpoint with `{question, courseId}` and receives `{reply}`. It describes the selected fictional sample course, not live library route facts. Without a key it returns a labeled local summary. Navigation and all quests work without a key.
