@@ -732,14 +732,18 @@ function checkpointFromText(text) {
     throw new Error("Invalid Campus Ghost QR code.");
   }
 
-  if (
-    url.origin !== window.location.origin ||
-    url.pathname !== window.location.pathname
-  ) {
-    throw new Error(
-      "Use a checkpoint QR code from this site."
-    );
-  }
+  
+const allowedHost = "campus-ghost.onrender.com";
+
+if (
+  url.protocol !== "https:" ||
+  url.hostname !== allowedHost ||
+  !["/", "/index.html"].includes(url.pathname)
+) {
+  throw new Error(
+    "Use a checkpoint QR code from this site."
+  );
+}
 
   const id = (
     url.searchParams.get("checkpoint") ||
