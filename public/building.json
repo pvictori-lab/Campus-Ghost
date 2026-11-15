@@ -1,68 +1,56 @@
+
 {
-  "name": "Sample floor \u2014 replace with your floor",
+  "name": "Halle Library - Second Floor",
+  "mapWidth": 600,
+  "mapHeight": 750,
   "nodes": [
-    {
-      "id": "entrance",
-      "label": "Entrance",
-      "x": 80,
-      "y": 210
-    },
-    {
-      "id": "junction",
-      "label": "Hallway junction",
-      "x": 290,
-      "y": 210
-    },
-    {
-      "id": "east",
-      "label": "East hallway",
-      "x": 560,
-      "y": 210
-    },
-    {
-      "id": "101",
-      "label": "Room 101",
-      "x": 290,
-      "y": 80
-    },
-    {
-      "id": "102",
-      "label": "Room 102",
-      "x": 560,
-      "y": 80
-    },
-    {
-      "id": "103",
-      "label": "Room 103",
-      "x": 560,
-      "y": 340
-    }
+    {"id":"N1","label":"NW Hallway (Emergency Exit)","x":106,"y":189},
+    {"id":"N2","label":"North Computers","x":263,"y":188},
+    {"id":"N3","label":"Northeast Hallway","x":359,"y":185},
+    {"id":"N5","label":"West Hallway (Reference/Group Study)","x":132,"y":285},
+    {"id":"N6","label":"Atrium North","x":287,"y":269},
+    {"id":"N7","label":"Stairs / Elevator","x":381,"y":260},
+    {"id":"N8","label":"West Atrium (Printers Side)","x":139,"y":380},
+    {"id":"N9","label":"Atrium Center / South","x":284,"y":363},
+    {"id":"N10","label":"East Atrium (Administration Side)","x":380,"y":364},
+    {"id":"N11","label":"Room 217 Hallway","x":395,"y":405},
+    {"id":"N12","label":"Periodicals West (Resources Office)","x":163,"y":480},
+    {"id":"N13","label":"Copier (Center)","x":285,"y":458},
+    {"id":"N14","label":"Periodicals East","x":419,"y":457},
+    {"id":"N15","label":"Southwest Hallway","x":160,"y":565},
+    {"id":"N16","label":"Southeast Hallway","x":456,"y":558},
+    {"id":"N17","label":"Stairs/Elevator Opposite Hallway","x":389,"y":185},
+    {"id":"Q1","label":"Computers (North)","x":310,"y":202,"qrCodeId":"Q1"},
+    {"id":"Q2","label":"Reference (West)","x":97,"y":238,"qrCodeId":"Q2"},
+    {"id":"Q4","label":"Atrium East","x":384,"y":302,"qrCodeId":"Q4"},
+    {"id":"Q5","label":"Room 217 (Faculty)","x":467,"y":457,"qrCodeId":"Q5"},
+    {"id":"Q6","label":"Resources Office (Periodicals)","x":152,"y":463,"qrCodeId":"Q6"},
+    {"id":"Q7","label":"Periodicals (South)","x":289,"y":541,"qrCodeId":"Q7"},
+    {"id":"Q8","label":"Entrance To Floor 2","x":384,"y":204,"qrCodeId":"Q8"}
   ],
   "edges": [
-    [
-      "entrance",
-      "junction"
-    ],
-    [
-      "junction",
-      "east"
-    ],
-    [
-      "junction",
-      "101"
-    ],
-    [
-      "east",
-      "102"
-    ],
-    [
-      "east",
-      "103"
-    ]
+    ["N1","N2"],["N1","N5"],
+    ["N2","N3"],["N2","N6"],
+    ["N3","N17"],
+    ["N5","N6"],["N5","N8"],
+    ["N6","N9"],
+    ["N7","N10"],
+    ["N8","N9"],["N8","N12"],
+    ["N9","N10"],["N9","N13"],
+    ["N10","N11"],
+    ["N11","N14"],
+    ["N12","N13"],["N12","N15"],
+    ["N13","N14"],["N13","N15"],
+    ["N14","N16"],
+    ["N15","N16"],
+    ["N17","N7"],
+    ["Q1","N2"],
+    ["Q2","N1"],["Q2","N5"],
+    ["Q4","N7"],["Q4","N10"],
+    ["Q5","N14"],
+    ["Q6","N12"],
+    ["Q7","N13"],["Q7","N15"],
+    ["Q8","N17"]
   ],
-  "rooms": [
-    "101",
-    "102",
-    "103"
-  ]
+  "rooms": []
 }
