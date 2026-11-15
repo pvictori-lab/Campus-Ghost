@@ -774,11 +774,13 @@ if (busy || (!running && !starting)) {
       let id;
 
       try {
-        id = checkpointFromText(text);
-      } catch (error) {
-        note.textContent = error.message;
-        return;
-      }
+  id = checkpointFromText(text);
+} catch (error) {
+  note.textContent =
+    "QR READ: " + String(text) +
+    " | ERROR: " + error.message;
+  return;
+}
 
       busy = true;
 
