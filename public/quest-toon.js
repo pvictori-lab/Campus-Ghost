@@ -716,31 +716,49 @@
       }
     }
 
-    function checkpointFromText(text) {
-      const url = new URL(text);
+    
+function checkpointFromText(text) {
+  const scannedText = String(text ?? "").trim();
 
-      if (
-        url.origin !== location.origin ||
-        url.pathname !== location.pathname
-      ) {
-        throw new Error(
-          "Use a checkpoint QR code from this site."
-        );
-      }
+  if (!scannedText) {
+    throw new Error("The QR code contains no text.");
+  }
 
-      const id = url.searchParams.get("checkpoint");
-      const select = $("checkpoint");
+  let url;
 
-      const exists = [...select.options].some(
-        option => option.value === id
-      );
+  try {
+    url = new URL(scannedText, window.location.href);
+  } catch {
+    throw new Error("Invalid Campus Ghost QR code.");
+  }
 
-      if (!exists) {
-        throw new Error("Unknown checkpoint.");
-      }
+  if (
+    url.origin !== window.location.origin ||
+    url.pathname !== window.location.pathname
+  ) {
+    throw new Error(
+      "Use a checkpoint QR code from this site."
+    );
+  }
 
-      return id;
-    }
+  const id = (
+    url.searchParams.get("checkpoint") ||
+    url.searchParams.get("qr") ||
+    ""
+  ).trim().toUpperCase();
+
+  const select = document.getElementById("checkpoint");
+
+  const exists = [...select.options].some(
+    option => option.value === id
+  );
+
+  if (!exists) {
+    throw new Error("Unknown checkpoint.");
+  }
+
+  return id;
+}
 
     async function onScan(text) {
       if (busy || !running) {
