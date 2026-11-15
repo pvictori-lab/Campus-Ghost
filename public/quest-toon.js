@@ -831,10 +831,13 @@ await scanner.start(
       window.Html5QrcodeSupportedFormats.QR_CODE
     ]
   },
-  (decodedText) => {
-    console.log("QR CODE DETECTED:", decodedText);
-    onScan(decodedText);
-  },
+ 
+(decodedText) => {
+  note.textContent = "QR DETECTED: " + decodedText;
+  console.log("QR CODE DETECTED:", decodedText);
+  onScan(decodedText);
+},
+
   () => {
     // Frames without a QR code are normal.
   }
