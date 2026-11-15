@@ -801,12 +801,30 @@
 
         scanner = new window.Html5Qrcode("reader");
 
-        await scanner.start(
-          { facingMode: "environment" },
-          { fps: 8 },
-          onScan,
-          () => {}
-        );
+       
+await scanner.start(
+  { facingMode: "environment" },
+  {
+    fps: 10,
+    qrbox: (width, height) => {
+      const size = Math.min(
+        250,
+        Math.floor(Math.min(width, height) * 0.8)
+      );
+      return { width: size, height: size };
+    },
+    aspectRatio: 1.333333
+  },
+  (decodedText) => {
+    console.log("QR CODE DETECTED:", decodedText);
+    onScan(decodedText);
+  },
+  (errorMessage) => {
+    // Normal while searching for a QR code.
+    // Avoid showing errors for every camera frame.
+  }
+);
+
 
         running = true;
         stopButton.hidden = false;
