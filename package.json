@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
-    "check": "node --check server.mjs && node --check public/app.js && node --check public/quest-toon.js && node -e \"JSON.parse(require('fs').readFileSync('public/building.json')); JSON.parse(require('fs').readFileSync('public/courses.json')); console.log('Source syntax and JSON checks passed')\""
+    "check": "node --check server.mjs && node --check public/app.js && node --check public/quest-toon.js && node -e \"JSON.parse(require('fs').readFileSync('public/building.json')); JSON.parse(require('fs').readFileSync('public/courses.json')); console.log('Source syntax and JSON checks passed')\"",
+    "test": "node --test"
   }
 }

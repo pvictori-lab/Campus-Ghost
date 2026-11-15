@@ -1,0 +1,407 @@
+{
+  "version": 2,
+  "trivia": {
+    "id": "ghost-trivia-streak-v1",
+    "title": "Ghost Trivia: Ten in a Row",
+    "attemptLength": 10,
+    "completionXP": 100,
+    "questions": [
+      {
+        "id": "trivia-01",
+        "prompt": "Which part of a typical plant cell carries out photosynthesis?",
+        "options": [
+          "Chloroplast",
+          "Nucleus",
+          "Cell wall"
+        ],
+        "answerIndex": 0,
+        "explanation": "Chloroplasts contain chlorophyll and convert light energy into chemical energy. The nucleus stores genetic material; the cell wall provides support."
+      },
+      {
+        "id": "trivia-02",
+        "prompt": "Which planet is closest to the Sun?",
+        "options": [
+          "Venus",
+          "Mercury",
+          "Mars"
+        ],
+        "answerIndex": 1,
+        "explanation": "Mercury has the closest orbit to the Sun. Venus is the second planet, and Mars is the fourth."
+      },
+      {
+        "id": "trivia-03",
+        "prompt": "What are the two digits in the binary number system?",
+        "options": [
+          "1 and 2",
+          "0 and 9",
+          "0 and 1"
+        ],
+        "answerIndex": 2,
+        "explanation": "Binary is base two. Each position represents a power of two, and its digit is either 0 or 1."
+      },
+      {
+        "id": "trivia-04",
+        "prompt": "What is the chemical symbol for gold?",
+        "options": [
+          "Ag",
+          "Au",
+          "Fe"
+        ],
+        "answerIndex": 1,
+        "explanation": "Au is the symbol for gold, from the Latin aurum. Ag represents silver and Fe represents iron."
+      },
+      {
+        "id": "trivia-05",
+        "prompt": "Which gas makes up the largest share of dry Earth air by volume?",
+        "options": [
+          "Oxygen",
+          "Carbon dioxide",
+          "Nitrogen"
+        ],
+        "answerIndex": 2,
+        "explanation": "Nitrogen accounts for about 78 percent of dry air. Oxygen is about 21 percent; carbon dioxide is a much smaller fraction."
+      },
+      {
+        "id": "trivia-06",
+        "prompt": "What is the SI unit of electric current?",
+        "options": [
+          "Ampere",
+          "Volt",
+          "Ohm"
+        ],
+        "answerIndex": 0,
+        "explanation": "Electric current is measured in amperes. Voltage is measured in volts and electrical resistance in ohms."
+      },
+      {
+        "id": "trivia-07",
+        "prompt": "Who wrote Romeo and Juliet?",
+        "options": [
+          "Jane Austen",
+          "William Shakespeare",
+          "Charles Dickens"
+        ],
+        "answerIndex": 1,
+        "explanation": "William Shakespeare wrote the tragedy Romeo and Juliet. Austen wrote novels including Pride and Prejudice; Dickens wrote novels including Oliver Twist."
+      },
+      {
+        "id": "trivia-08",
+        "prompt": "What is a sonnet in its conventional form?",
+        "options": [
+          "A fourteen-line poem",
+          "A five-act play",
+          "A three-line poem"
+        ],
+        "answerIndex": 0,
+        "explanation": "A conventional sonnet has fourteen lines. Different sonnet traditions use different rhyme schemes and structures."
+      },
+      {
+        "id": "trivia-09",
+        "prompt": "Which instrument commonly has 88 keys in its standard modern form?",
+        "options": [
+          "Violin",
+          "Flute",
+          "Piano"
+        ],
+        "answerIndex": 2,
+        "explanation": "A standard modern piano has 88 keys: 52 white and 36 black. Some pianos have different ranges."
+      },
+      {
+        "id": "trivia-10",
+        "prompt": "Who painted the Mona Lisa?",
+        "options": [
+          "Claude Monet",
+          "Vincent van Gogh",
+          "Leonardo da Vinci"
+        ],
+        "answerIndex": 2,
+        "explanation": "Leonardo da Vinci painted the Mona Lisa during the Italian Renaissance."
+      },
+      {
+        "id": "trivia-11",
+        "prompt": "What is a self-portrait?",
+        "options": [
+          "An image an artist makes of themself",
+          "A painting with no people",
+          "A picture of a landscape"
+        ],
+        "answerIndex": 0,
+        "explanation": "A self-portrait represents the artist who created it. It can be made in many media, including painting, drawing, photography, and sculpture."
+      },
+      {
+        "id": "trivia-12",
+        "prompt": "What does a musical rest indicate?",
+        "options": [
+          "Play louder",
+          "A period of silence",
+          "Repeat the whole piece"
+        ],
+        "answerIndex": 1,
+        "explanation": "A rest specifies silence for a particular duration. Its shape indicates its rhythmic value."
+      },
+      {
+        "id": "trivia-13",
+        "prompt": "How many sides does a hexagon have?",
+        "options": [
+          "Five",
+          "Six",
+          "Eight"
+        ],
+        "answerIndex": 1,
+        "explanation": "A hexagon is a polygon with six sides. A pentagon has five sides and an octagon has eight."
+      },
+      {
+        "id": "trivia-14",
+        "prompt": "How many minutes are in two hours?",
+        "options": [
+          "120",
+          "100",
+          "180"
+        ],
+        "answerIndex": 0,
+        "explanation": "Each hour has 60 minutes, so two hours contain 2 ? 60 = 120 minutes."
+      },
+      {
+        "id": "trivia-15",
+        "prompt": "Which animal is a mammal?",
+        "options": [
+          "Octopus",
+          "Salmon",
+          "Dolphin"
+        ],
+        "answerIndex": 2,
+        "explanation": "Dolphins are mammals: they breathe air and nurse their young with milk. Salmon are fish and octopuses are mollusks."
+      },
+      {
+        "id": "trivia-16",
+        "prompt": "How many squares are on a standard chessboard?",
+        "options": [
+          "64",
+          "81",
+          "100"
+        ],
+        "answerIndex": 0,
+        "explanation": "A standard chessboard is eight squares by eight squares: 8 ? 8 = 64."
+      },
+      {
+        "id": "trivia-17",
+        "prompt": "In standard chess, which piece moves in an L shape and can jump over pieces?",
+        "options": [
+          "Bishop",
+          "Knight",
+          "Rook"
+        ],
+        "answerIndex": 1,
+        "explanation": "A knight moves two squares along one axis and one square along the other. It can jump over intervening pieces."
+      },
+      {
+        "id": "trivia-18",
+        "prompt": "How many faces does an ordinary cube have?",
+        "options": [
+          "Four",
+          "Eight",
+          "Six"
+        ],
+        "answerIndex": 2,
+        "explanation": "A cube has six square faces, twelve edges, and eight vertices."
+      },
+      {
+        "id": "trivia-19",
+        "prompt": "Which organ pumps blood through the human body?",
+        "options": [
+          "Liver",
+          "Heart",
+          "Stomach"
+        ],
+        "answerIndex": 1,
+        "explanation": "The heart is a muscular organ that pumps blood through the circulatory system."
+      },
+      {
+        "id": "trivia-20",
+        "prompt": "At standard atmospheric pressure, what is the freezing point of pure water in Celsius?",
+        "options": [
+          "0 degrees",
+          "10 degrees",
+          "100 degrees"
+        ],
+        "answerIndex": 0,
+        "explanation": "Pure water freezes at 0 degrees Celsius at standard atmospheric pressure. Pressure and dissolved substances can change the freezing point."
+      },
+      {
+        "id": "trivia-21",
+        "prompt": "Which planet is known for its prominent ring system?",
+        "options": [
+          "Mercury",
+          "Earth",
+          "Saturn"
+        ],
+        "answerIndex": 2,
+        "explanation": "Saturn has a prominent system of rings made largely of particles of ice, with rock and dust."
+      },
+      {
+        "id": "trivia-22",
+        "prompt": "Which of these is a renewable energy source?",
+        "options": [
+          "Coal",
+          "Sunlight",
+          "Petroleum"
+        ],
+        "answerIndex": 1,
+        "explanation": "Sunlight is continually replenished by the Sun. Coal and petroleum are fossil fuels formed over geological timescales."
+      },
+      {
+        "id": "trivia-23",
+        "prompt": "What force keeps planets in orbit around the Sun?",
+        "options": [
+          "Gravity",
+          "Friction",
+          "Magnetism"
+        ],
+        "answerIndex": 0,
+        "explanation": "Gravity attracts masses. The Sun?s gravity, together with a planet?s motion, produces its orbit."
+      },
+      {
+        "id": "trivia-24",
+        "prompt": "What does a thermometer measure?",
+        "options": [
+          "Mass",
+          "Distance",
+          "Temperature"
+        ],
+        "answerIndex": 2,
+        "explanation": "A thermometer measures temperature. It does not measure mass or distance."
+      },
+      {
+        "id": "trivia-25",
+        "prompt": "Who wrote Pride and Prejudice?",
+        "options": [
+          "Jane Austen",
+          "Mary Shelley",
+          "Emily Dickinson"
+        ],
+        "answerIndex": 0,
+        "explanation": "Jane Austen wrote Pride and Prejudice, first published in 1813."
+      },
+      {
+        "id": "trivia-26",
+        "prompt": "Which art form assembles small pieces of material into an image?",
+        "options": [
+          "Ballet",
+          "Mosaic",
+          "Sonnet"
+        ],
+        "answerIndex": 1,
+        "explanation": "A mosaic forms an image or design from small pieces such as stone, glass, or tile."
+      },
+      {
+        "id": "trivia-27",
+        "prompt": "Which instrument belongs to the woodwind family?",
+        "options": [
+          "Trumpet",
+          "Cello",
+          "Clarinet"
+        ],
+        "answerIndex": 2,
+        "explanation": "The clarinet is a woodwind instrument that uses a single reed. The trumpet is brass, and the cello is a string instrument."
+      },
+      {
+        "id": "trivia-28",
+        "prompt": "What is a sculpture?",
+        "options": [
+          "A three-dimensional work of art",
+          "A punctuation mark",
+          "A musical speed marking"
+        ],
+        "answerIndex": 0,
+        "explanation": "Sculpture creates three-dimensional forms, using processes such as carving, modeling, casting, or assembly."
+      },
+      {
+        "id": "trivia-29",
+        "prompt": "Which of these is a traditional Japanese three-line poetic form?",
+        "options": [
+          "Epic",
+          "Haiku",
+          "Novel"
+        ],
+        "answerIndex": 1,
+        "explanation": "A haiku is a short Japanese poetic form, traditionally arranged in a pattern of 5, 7, and 5 sound units. English adaptations often use three lines."
+      },
+      {
+        "id": "trivia-30",
+        "prompt": "What does a conductor do for an orchestra?",
+        "options": [
+          "Tune every instrument by hand",
+          "Write every piece being played",
+          "Direct the musicians? performance"
+        ],
+        "answerIndex": 2,
+        "explanation": "A conductor coordinates an ensemble?s timing, phrasing, dynamics, and interpretation."
+      },
+      {
+        "id": "trivia-31",
+        "prompt": "How many days are in a leap year in the Gregorian calendar?",
+        "options": [
+          "366",
+          "365",
+          "364"
+        ],
+        "answerIndex": 0,
+        "explanation": "A Gregorian leap year includes February 29 and has 366 days."
+      },
+      {
+        "id": "trivia-32",
+        "prompt": "Which ocean is the largest by surface area?",
+        "options": [
+          "Atlantic",
+          "Pacific",
+          "Indian"
+        ],
+        "answerIndex": 1,
+        "explanation": "The Pacific is the largest ocean by surface area."
+      },
+      {
+        "id": "trivia-33",
+        "prompt": "What is the largest living land animal species?",
+        "options": [
+          "Giraffe",
+          "Hippopotamus",
+          "African savanna elephant"
+        ],
+        "answerIndex": 2,
+        "explanation": "The African savanna elephant is the largest living land animal species by mass."
+      },
+      {
+        "id": "trivia-34",
+        "prompt": "How many degrees are in a right angle?",
+        "options": [
+          "90",
+          "45",
+          "180"
+        ],
+        "answerIndex": 0,
+        "explanation": "A right angle measures 90 degrees, one quarter of a full turn."
+      },
+      {
+        "id": "trivia-35",
+        "prompt": "Which number is a prime number?",
+        "options": [
+          "9",
+          "13",
+          "15"
+        ],
+        "answerIndex": 1,
+        "explanation": "13 has exactly two positive divisors: 1 and 13. Both 9 and 15 have additional divisors."
+      },
+      {
+        "id": "trivia-36",
+        "prompt": "How many months are in a calendar year?",
+        "options": [
+          "10",
+          "11",
+          "12"
+        ],
+        "answerIndex": 2,
+        "explanation": "A year in the Gregorian calendar has twelve months."
+      }
+    ]
+  }
+}

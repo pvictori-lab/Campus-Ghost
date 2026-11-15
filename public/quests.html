@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Campus Ghost · Quest Arcade</title>
+  <link rel="stylesheet" href="quests.css">
+</head>
+<body>
+  <main id="campus-quests"></main>
+  <script type="module">
+    import {startQuest} from './quests.js';
+    await startQuest({roomId: 'demo-room-101', ghostId: 'demo-quest-ghost', onComplete(result) {
+      document.getElementById('quest-result').textContent = JSON.stringify(result, null, 2);
+    }});
+  </script>
+  <aside class="handoff">
+    <h2>Demo integration context</h2>
+    <p>Room and ghost IDs on this page are fictional test identifiers. This module does not check your location or draw a ghost.</p>
+    <details><summary>Latest completion or leave event</summary><pre id="quest-result">No quest finished yet.</pre></details>
+  </aside>
+</body>
+</html>
