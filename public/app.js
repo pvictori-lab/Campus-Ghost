@@ -85,10 +85,14 @@ function fillCourses() {
 function updateProgress(route) {
   let percentage = 0;
   if (journey && journey.last === journey.destination) percentage = 100;
-  else if (route && route.length > 1) {
-    const checkpointIds = route.filter(id => isCheckpoint(node(id)));
-    const total = Math.max(1, checkpointIds.length - 1), index = checkpointIds.indexOf(journey.last);
-    percentage = Math.max(0, Math.round((Math.max(0, index) / total) * 100));
+  else if (journey) {
+    const originalRoute = routeBetween(journey.start || journey.last, journey.destination);
+    if (originalRoute && originalRoute.length > 1) {
+      const checkpointIds = originalRoute.filter(id => isCheckpoint(node(id)));
+      const total = Math.max(1, checkpointIds.length - 1);
+      const index = checkpointIds.indexOf(journey.last);
+      percentage = index < 0 ? 0 : Math.round((index / total) * 100);
+    }
   }
   $("progress").value = percentage; text("progressLabel", percentage + "%");
 }
@@ -136,10 +140,10 @@ function confirmCheckpoint() {
       text("copyStatus", "That checkpoint is not on the current route. Use I'm lost to reset to a different known checkpoint."); return;
     }
   }
-  journey = { last: checkpointId, destination: destinationId }; save();
+  journey = { start: journey ? (journey.start || journey.last) : checkpointId, last: checkpointId, destination: destinationId }; save();
   render("Checkpoint confirmed: " + selected.label);
 }
-function changeDestination() { if (journey) { journey.destination = $("destination").value; save(); } render("Destination updated."); }
+function changeDestination() { if (journey) { journey.start = journey.last; journey.destination = $("destination").value; save(); } render("Destination updated."); }
 function resetJourney() { journey = null; try { localStorage.removeItem(STORAGE_KEY); } catch {} render("Journey reset."); }
 function lostAndReset() {
   const scene = $("scene"); scene.classList.remove("ghost-out"); void scene.offsetWidth; scene.classList.add("ghost-out");
@@ -187,11 +191,11 @@ async function initialize() {
     fillCourses();
     const saved = readSaved();
     if (saved && isCheckpoint(node(saved.last)) && node(saved.destination)) {
-      journey = saved; $("checkpoint").value = saved.last;
+      journey = { start: saved.start || saved.last, last: saved.last, destination: saved.destination }; $("checkpoint").value = saved.last;
       if (destinations.includes(saved.destination)) $("destination").value = saved.destination;
     }
     const params = new URLSearchParams(window.location.search), scanned = params.get("checkpoint") || params.get("qr");
-    if (scanned && isCheckpoint(node(scanned))) { $("checkpoint").value = scanned; journey = { last: scanned, destination: $("destination").value }; save(); }
+    if (scanned && isCheckpoint(node(scanned))) { $("checkpoint").value = scanned; journey = { start: scanned, last: scanned, destination: $("destination").value }; save(); }
     text("building", building.name || "Campus building"); updateLink(); render();
     $("checkpoint").addEventListener("change", updateLink);
     $("destination").addEventListener("change", changeDestination);
