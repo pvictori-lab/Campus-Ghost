@@ -761,9 +761,11 @@ function checkpointFromText(text) {
 }
 
     async function onScan(text) {
-      if (busy || !running) {
-        return;
-      }
+      
+if (busy || (!running && !starting)) {
+  return;
+}
+
 
       let id;
 
@@ -820,28 +822,24 @@ function checkpointFromText(text) {
         scanner = new window.Html5Qrcode("reader");
 
        
+
 await scanner.start(
   { facingMode: "environment" },
   {
     fps: 10,
-    qrbox: (width, height) => {
-      const size = Math.min(
-        250,
-        Math.floor(Math.min(width, height) * 0.8)
-      );
-      return { width: size, height: size };
-    },
-    aspectRatio: 1.333333
+    formatsToSupport: [
+      window.Html5QrcodeSupportedFormats.QR_CODE
+    ]
   },
   (decodedText) => {
     console.log("QR CODE DETECTED:", decodedText);
     onScan(decodedText);
   },
-  (errorMessage) => {
-    // Normal while searching for a QR code.
-    // Avoid showing errors for every camera frame.
+  () => {
+    // Frames without a QR code are normal.
   }
 );
+
 
 
         running = true;
