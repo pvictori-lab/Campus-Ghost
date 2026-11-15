@@ -1,26 +1,5 @@
 [
-  {
-    "id": "bio",
-    "title": "Sample Biology",
-    "description": "Introduction to cells and living systems.",
-    "meeting": "Tuesday / Thursday, 2:00\u20133:15 PM",
-    "roomId": "101",
-    "milestone": "Sample reflection \u2014 date not entered"
-  },
-  {
-    "id": "math",
-    "title": "Sample Mathematics",
-    "description": "Foundations of algebra and problem solving.",
-    "meeting": "Monday / Wednesday, 10:00\u201311:15 AM",
-    "roomId": "102",
-    "milestone": "Sample quiz \u2014 date not entered"
-  },
-  {
-    "id": "writing",
-    "title": "Sample Writing",
-    "description": "Practice in academic argument and revision.",
-    "meeting": "Friday, 1:00\u20132:15 PM",
-    "roomId": "103",
-    "milestone": "Sample essay \u2014 date not entered"
-  }
+  {"id":"demo-biology","title":"DEMO ONLY — Sample Biology","description":"Placeholder course record. Replace with a verified description from the official catalog or current syllabus.","professor":null,"meeting":"Not supplied — verify the current section schedule.","room":null,"destinationId":null,"milestones":[],"demo":true},
+  {"id":"demo-mathematics","title":"DEMO ONLY — Sample Mathematics","description":"Placeholder course record. Replace with a verified description from the official catalog or current syllabus.","professor":null,"meeting":"Not supplied — verify the current section schedule.","room":null,"destinationId":null,"milestones":[],"demo":true},
+  {"id":"demo-writing","title":"DEMO ONLY — Sample Writing","description":"Placeholder course record. Replace with a verified description from the official catalog or current syllabus.","professor":null,"meeting":"Not supplied — verify the current section schedule.","room":null,"destinationId":null,"milestones":[],"demo":true}
 ]
