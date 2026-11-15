@@ -12,7 +12,7 @@ Campus Ghost is a student-project prototype for indoor campus wayfinding and cla
 - Basic in-memory request throttling and server-side API-key handling.
 
 ## Run locally
-Requires Node.js 20 or newer.
+Requires Node.js 20.18 or newer (or a current Node.js LTS release).
 1. Clone or download this repository.
 2. In the project root, run npm start.
 3. Open http://localhost:3000.
