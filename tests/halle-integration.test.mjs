@@ -206,6 +206,17 @@ test('a QR decoded during scanner startup is queued and confirmed once the camer
  try{await app.$('scan-now').onclick();assert.equal(app.app.getJourney().last,'Q8');assert.equal(app.app.getJourney().lastConfirmationMethod,'qr');assert.equal(app.offers.length,0);assert.equal(stopped,1);}finally{app.director.destroy();}
 });
 
+test('James printed QR short links resolve to all seven existing mapped checkpoints without network redirects',async()=>{
+ const mappings=[['bh6Qux','Q1'],['bh6Qv6','Q2'],['bh6Qv8','Q4'],['bh6QvB','Q5'],['bh6QvD','Q6'],['bh6QvG','Q7'],['bh6QvH','Q8']];
+ const app=await boot();try{
+  for(const [short,id]of mappings){
+   app.app.resetJourney();await app.$('scan-now').onclick();await app.scanner.read(`  https://qrco.de/${short}  `);
+   assert.equal(app.app.getJourney().last,id);assert.equal(app.app.getJourney().lastConfirmationMethod,'qr');assert.equal(app.offers.length,0);assert.match(app.$('scan-note').textContent,/Checkpoint confirmed:/);
+  }
+  const before=JSON.stringify(app.app.getJourney());await app.$('scan-now').onclick();await app.scanner.read('https://qrco.de/not-one-of-our-codes');assert.equal(JSON.stringify(app.app.getJourney()),before);assert.match(app.$('scan-note').textContent,/from this site/);
+ }finally{app.director.destroy();}
+});
+
 test('a camera still starting when navigation pauses stops after startup and remains disabled',async()=>{
  const app=await boot();let release,stopped=0;
  app.window.Html5Qrcode=class{start(){return new Promise(resolve=>{release=resolve;});}async stop(){stopped++;}clear(){}};

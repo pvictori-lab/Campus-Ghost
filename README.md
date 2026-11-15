@@ -49,7 +49,7 @@ npm.cmd run check
 & 'C:\Program Files\nodejs\node.exe' --test
 ```
 
-The 38 automated tests cover navigation/QR confirmation, approved printed QR URLs, code entry, route geometry, full journeys, encounter consumption across reloads, migration of saved journeys, cancellation, stale callbacks, rewards, all games, course cards, and server validation/throttling. Camera hardware is mocked; printed QR decoding and assistive-technology behavior still need device testing. The existing GitHub Actions checks also run this suite on pull requests.
+The 39 automated tests cover navigation/QR confirmation, all seven existing printed QR short links, code entry, route geometry, full journeys, encounter consumption across reloads, migration of saved journeys, cancellation, stale callbacks, rewards, all games, course cards, and server validation/throttling. Camera hardware is mocked; printed QR decoding and assistive-technology behavior still need device testing. The existing GitHub Actions checks also run this suite on pull requests.
 
 `tests/browser-journey.mjs` additionally verifies the live app in an isolated Edge/Chromium debugging session, including native Enter submission and desktop/mobile viewport bounds. See [QUESTS-HANDOFF.md](QUESTS-HANDOFF.md) for setup. Browser profiles and generated screenshots are excluded from Git.
 

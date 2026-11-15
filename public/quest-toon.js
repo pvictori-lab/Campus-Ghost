@@ -726,46 +726,46 @@
     }
 
     function checkpointFromText(text) {
-  const scannedText = String(text ?? "").trim();
+      const scannedText = String(text ?? "").trim();
+      if (!scannedText) throw new Error("The QR code contains no text.");
 
-  if (!scannedText) {
-    throw new Error("The QR code contains no text.");
-  }
+      // James's existing printed QR codes. Resolve exact known links locally;
+      // do not navigate to or fetch arbitrary shortened URLs.
+      const qrMappings = {
+        "https://qrco.de/bh6Qux": "Q1",
+        "https://qrco.de/bh6Qv6": "Q2",
+        "https://qrco.de/bh6Qv8": "Q4",
+        "https://qrco.de/bh6QvB": "Q5",
+        "https://qrco.de/bh6QvD": "Q6",
+        "https://qrco.de/bh6QvG": "Q7",
+        "https://qrco.de/bh6QvH": "Q8"
+      };
+      let id;
+      if (Object.hasOwn(qrMappings, scannedText)) {
+        id = qrMappings[scannedText];
+      } else {
+        let url;
+        try { url = new URL(scannedText, window.location.href); }
+        catch { throw new Error("Invalid Campus Ghost QR code."); }
 
-  let url;
-
-  try {
-    url = new URL(scannedText, window.location.href);
-  } catch {
-    throw new Error("Invalid Campus Ghost QR code.");
-  }
-
-
-  // Keep James's printed production codes valid, alongside links generated on this host.
-  const sameSite = url.origin === window.location.origin && [window.location.pathname, '/', '/index.html'].includes(url.pathname);
-  const approvedPrintedCode = url.protocol === 'https:' && url.host === 'campus-ghost.onrender.com' && ['/', '/index.html'].includes(url.pathname);
-  if (url.username || url.password || (!sameSite && !approvedPrintedCode)) {
-    throw new Error('Use a Campus Ghost checkpoint QR code from this site.');
-  }
-
-  const id = (
-    url.searchParams.get("checkpoint") ||
-    url.searchParams.get("qr") ||
-    ""
-  ).trim().toUpperCase();
-
-  const select = document.getElementById("checkpoint");
-
-  const exists = [...select.options].some(
-    option => option.value === id
-  );
-
-  if (!exists) {
-    throw new Error("Unknown checkpoint.");
-  }
-
-  return id;
-}
+        // Preserve printed production URLs and links generated on this host.
+        const sameSite = url.origin === window.location.origin &&
+          [window.location.pathname, "/", "/index.html"].includes(url.pathname);
+        const approvedPrintedCode = url.protocol === "https:" &&
+          url.host === "campus-ghost.onrender.com" &&
+          ["/", "/index.html"].includes(url.pathname);
+        if (url.username || url.password || (!sameSite && !approvedPrintedCode)) {
+          throw new Error("Use a Campus Ghost checkpoint QR code from this site.");
+        }
+        id = url.searchParams.get("checkpoint") || url.searchParams.get("qr");
+      }
+      id = String(id ?? "").trim().toUpperCase();
+      const select = $("checkpoint");
+      if (!select || ![...select.options].some(option => option.value === id)) {
+        throw new Error("Unknown checkpoint.");
+      }
+      return id;
+    }
 
     async function onScan(text) {
       if (busy || (!running && !starting) || document.documentElement.dataset.questPaused === "true") {

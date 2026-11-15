@@ -25,3 +25,5 @@ During a quest the navigation/code controls pause, and cleanup restores focus to
 ## Checks
 
 `npm.cmd test` covers case/whitespace normalization, valid and invalid codes, unchanged state on repeats/errors, camera failure, QR confirmations, saved progress, arrival, and quests. The optional isolated browser check additionally exercises native Enter, viewport bounds, camera callbacks, focus restoration, and a full journey. Physical-camera and assistive-technology checks still require a manual device pass.
+
+The seven existing printed qrco.de links supplied by James are recognized locally. Unknown short links are rejected; the app does not follow arbitrary redirects.
