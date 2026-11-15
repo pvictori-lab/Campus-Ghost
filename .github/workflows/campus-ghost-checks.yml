@@ -1,0 +1,35 @@
+name: Campus Ghost checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, feature/campus-ghost-final-project]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax and JSON data
+        run: npm run check
+      - name: Start app and test health endpoint
+        run: |
+          npm start > /tmp/campus-ghost.log 2>&1 &
+          echo $! > /tmp/campus-ghost.pid
+          trap 'kill $(cat /tmp/campus-ghost.pid) 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail http://127.0.0.1:3000/api/health; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:3000/
+          curl --fail http://127.0.0.1:3000/building.json
+          curl --fail -X POST http://127.0.0.1:3000/api/ghost \
+            -H 'Content-Type: application/json' \
+            -d '{"question":"Where is my professor office?","courseId":"demo-biology","startId":"Q8","destinationId":"Q5"}' \
+            | grep -q 'not listed in the project data'
