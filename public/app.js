@@ -454,92 +454,49 @@ async function askGhost(event) {
 
   const button = $("ask");
   button.disabled = true;
+
   setText("reply", "Your ghost is thinking...");
 
   try {
-    const response = await fetch("/api/chat", {
+    const response = await fetch("/api/ghost", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        question,
-        message: question
+        question: question
       })
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
       throw new Error(
-        `Assistant server returned ${response.status}`
+        data.reply ||
+        "Assistant request failed: HTTP " + response.status
       );
     }
 
-    const data = await response.json();
-
-    const answer =
-      data.reply ||
-      data.answer ||
-      data.message ||
-      data.response;
-
-    if (typeof answer !== "string") {
-      throw new Error("Unexpected assistant response");
+    if (typeof data.reply !== "string") {
+      throw new Error(
+        "The server returned an unexpected response."
+      );
     }
 
-    setText("reply", answer);
-
+    setText("reply", data.reply);
   } catch (error) {
     console.error("Ghost assistant:", error);
 
     setText(
       "reply",
-      "The ghost assistant isn't connected yet. " +
-      "The map and QR navigation can still be used."
+      "Assistant error: " +
+      error.message +
+      " Your map and QR navigation are still available."
     );
   } finally {
     button.disabled = false;
   }
 }
-
-async function initialize() {
-  try {
-    const response = await fetch("building.json");
-
-    if (!response.ok) {
-      throw new Error(
-        `building.json returned ${response.status}`
-      );
-    }
-
-    building = await response.json();
-
-    if (
-      !Array.isArray(building.nodes) ||
-      !Array.isArray(building.edges)
-    ) {
-      throw new Error("Invalid building.json format");
-    }
-
-    nodes = new Map(
-      building.nodes.map(n => [n.id, n])
-    );
-
-    setText(
-      "building",
-      building.name || "Halle Library — Second Floor"
-    );
-
-    const checkpoints = building.nodes.filter(isCheckpoint);
-
-    $("checkpoint").replaceChildren();
-    $("destination").replaceChildren();
-
-    for (const n of checkpoints) {
-      $("checkpoint").append(
-        makeOption(n.id, n.label)
-      );
-    }
-
     // Every navigation node can be a destination.
     for (const n of building.nodes) {
       $("destination").append(
