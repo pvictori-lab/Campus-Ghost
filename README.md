@@ -6,7 +6,7 @@ Location changes only when a student scans a checkpoint or confirms one. This is
 
 ## Run locally
 
-Tested with Node 26. No dependencies need installing.
+Requires Node 20.18 or newer; tested locally with Node 26. No dependencies need installing.
 
 ```powershell
 $env:HOST = '127.0.0.1'
@@ -44,11 +44,12 @@ Standalone quests: `/quests.html`. Isolated integration example: `/quests-previe
 
 ```powershell
 npm.cmd test
+npm.cmd run check
 # Or:
 & 'C:\Program Files\nodejs\node.exe' --test
 ```
 
-The 36 automated tests cover the navigation/QR confirmation path, code entry, route geometry, full journeys, encounter consumption across reloads, cancellation, stale callbacks, reward preservation, all games, and HTTP assets. Camera hardware is mocked; printed QR decoding and assistive-technology behavior still need device testing.
+The 38 automated tests cover navigation/QR confirmation, approved printed QR URLs, code entry, route geometry, full journeys, encounter consumption across reloads, migration of saved journeys, cancellation, stale callbacks, rewards, all games, course cards, and server validation/throttling. Camera hardware is mocked; printed QR decoding and assistive-technology behavior still need device testing. The existing GitHub Actions checks also run this suite on pull requests.
 
 `tests/browser-journey.mjs` additionally verifies the live app in an isolated Edge/Chromium debugging session, including native Enter submission and desktop/mobile viewport bounds. See [QUESTS-HANDOFF.md](QUESTS-HANDOFF.md) for setup. Browser profiles and generated screenshots are excluded from Git.
 
@@ -59,8 +60,12 @@ The 36 automated tests cover the navigation/QR confirmation path, code entry, ro
 - `public/building.json`: James's original 600 x 750 Halle map graph and existing QR IDs. The floor images and Pat's original SVG artwork/CSS are retained.
 - `public/quests.json`: validated, predefined trivia content; the games need no OpenAI or other API.
 
-Because `rooms` is empty, encounter origins use existing QR checkpoint nodes, never invented rooms. James can mark verified existing entrance nodes with `encounterOrigin: true`; if any are marked, only those origins are used. `encounterOrigin: false` excludes a checkpoint from fallback selection.
+Because `rooms` is empty, encounter origins use existing QR checkpoint nodes, never invented rooms. James can mark verified existing entrance nodes with `encounterOrigin: true`; if any are marked, only those origins are used. `encounterOrigin: false` excludes a checkpoint from fallback selection. An encounter trigger must be an intermediate checkpoint on the displayed itinerary. Routes with no eligible intermediate checkpoint have no encounter.
+
+Routing retains main's breadth-first search through the bidirectional map graph. Where possible, the itinerary adds one small, simple detour through a reportable QR checkpoint; no invented connections or repeated corridors are added. These are drawing coordinates and graph connections, not measured walking distances. Map points, connections, and accessibility need on-site verification.
+
+Journey storage uses main's `campus-ghost-journey-v3` key and restores the older integration's `campus-ghost-halle-v2` records when needed. Confirmed location and original checkpoint progress survive migration. Starting over or using **I'm lost** resets navigation only. Course records retain main's `id`, `title`, `description`, `professor`, `meeting`, `room`, `destinationId`, `milestones`, and `demo` fields; the included entries remain labeled placeholders.
 
 ## Optional course chat
 
-Copy `.env.example` to `.env`, configure a server-side API key/model if desired, then restart. Never commit `.env` or real keys. Chat uses the existing `POST /api/ghost` endpoint with `{question, courseId}` and receives `{reply}`. It describes the selected fictional sample course, not live library route facts. Without a key it returns a labeled local summary. Navigation and all quests work without a key.
+Copy `.env.example` to `.env`, configure a server-side API key/model if desired, then restart. Never commit `.env` or real keys. Chat retains main's `POST /api/ghost` endpoint, course cards, suggested prompts, data-based fallback, health endpoint, and request throttling. The request contains `{question, courseId, startId, destinationId, routeIds}` and receives `{reply, mode}` (or `{error}` on invalid input). The optional route IDs are validated against the server's graph so the assistant describes the itinerary actually shown. Requests without route IDs retain main's route calculation. Without a key, or if the AI is unavailable, it returns a labeled local summary. Missing professor/room facts remain unknown. Navigation and all quests work without a key.

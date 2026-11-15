@@ -740,13 +740,12 @@
     throw new Error("Invalid Campus Ghost QR code.");
   }
 
-  if (
-    url.origin !== window.location.origin ||
-    url.pathname !== window.location.pathname
-  ) {
-    throw new Error(
-      "Use a checkpoint QR code from this site."
-    );
+
+  // Keep James's printed production codes valid, alongside links generated on this host.
+  const sameSite = url.origin === window.location.origin && [window.location.pathname, '/', '/index.html'].includes(url.pathname);
+  const approvedPrintedCode = url.protocol === 'https:' && url.host === 'campus-ghost.onrender.com' && ['/', '/index.html'].includes(url.pathname);
+  if (url.username || url.password || (!sameSite && !approvedPrintedCode)) {
+    throw new Error('Use a Campus Ghost checkpoint QR code from this site.');
   }
 
   const id = (
@@ -802,9 +801,10 @@
         $('confirm').dataset.confirmationMethod='qr';
         try { $('confirm').click(); } finally { delete $('confirm').dataset.confirmationMethod; }
 
+        if($('confirm').dataset.confirmationAccepted==='false')throw Error($('copyStatus').textContent||'This checkpoint could not be confirmed.');
         await halt();
 
-        note.textContent = "Checkpoint confirmed.";
+        note.textContent = 'Checkpoint confirmed: ' + [...select.options].find(option=>option.value===id).textContent + '.';
       } catch (error) {
         note.textContent = error.message || String(error);
       } finally {

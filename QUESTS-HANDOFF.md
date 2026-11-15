@@ -82,7 +82,7 @@ An attempt shuffles with Fisher-Yates and selects ten distinct questions. Retry 
 
 The memory games award 20 completion XP plus five round scores: 20 points per unaided round, 10 per assisted/retried round (70-120 total). Replays cannot upgrade or duplicate a previous reward. No partial XP is saved for unfinished runs.
 
-Progress remains under `campus-ghost.quests.v1` as `{xp, completed}`. Old completed IDs and XP are preserved. Navigation uses `campus-ghost-halle-v2`; resetting it never clears quest progress. Blocked/corrupt storage falls back to memory with a visible warning. Browser storage is user-editable and cross-tab writes are not transactional; this is a local prototype ledger, not a multiplayer reward server.
+Progress remains under `campus-ghost.quests.v1` as `{xp, completed}`. Old completed IDs and XP are preserved. Navigation uses main's `campus-ghost-journey-v3`, with a fallback migration from `campus-ghost-halle-v2`; resetting navigation never clears quest progress. The previous interactive game is remembered in sessionStorage (`campus-ghost.quests.last-game`) so a new encounter iframe still avoids immediately repeating it. If sessionStorage is unavailable, repeat avoidance lasts for the current module instance. Blocked/corrupt reward storage falls back to memory with a visible warning. Browser storage is user-editable and cross-tab writes are not transactional; this is a local prototype ledger, not a multiplayer reward server.
 
 ## Verification
 
@@ -97,10 +97,12 @@ Start-Process -FilePath 'C:\Program Files (x86)\Microsoft\Edge\Application\msedg
 node tests/browser-journey.mjs
 ```
 
-The browser check intentionally seeds/resets only its isolated profile's test-origin keys. Never use an everyday browser debugging session. It verifies a complete journey, native Enter submission, camera-failure fallback, QR callbacks with a mocked decoder, focus, reduced motion, viewport bounds, and saved XP. Screenshots are generated into ignored `browser-artifacts/`. Physical camera decoding, permissions, real-device touch, and screen-reader behavior still need manual verification.
+The browser check intentionally seeds/resets only its isolated profile's test-origin keys. Never use an everyday browser debugging session. It verifies a complete journey, native Enter submission, camera-failure fallback, QR callbacks with a mocked decoder, focus, reduced motion, viewport bounds, all three game completions, repeat avoidance across fresh encounter frames, zero-reward replay, trivia failure, class cards, the route-aware local assistant, and saved XP. Screenshots are generated into ignored `browser-artifacts/`. Physical camera decoding, permissions, real-device touch, and screen-reader behavior still need manual verification.
 
 ## Teammate compatibility
 
-The integration retains the newer teammate QR URL normalization, relative same-site URLs, QR-only/fps scanner configuration, startup decoding, visible detection feedback, and chat error-response handling. Startup scans are queued until the camera is ready so canceled/retired camera instances cannot change a later journey. Upstream snapshots inspected during preparation contained initialization/template-string syntax regressions; this branch retains the complete working initialization and valid routing with the new interfaces applied. Detection feedback does not log raw QR contents.
+The branch incorporates main through `9d0ced2`, including the class cards/data, responsive styling, BFS routing, lost/respawn control, saved-route progress, health endpoint, assistant fallback/validation/throttling, Node requirement, and CI workflow. James's building data, floor images, and Pat's SVG artwork/CSS are unchanged. The scanner accepts generated same-origin links and James's HTTPS `campus-ghost.onrender.com` printed links (only `/` or `/index.html`), rejecting other hosts/paths. Startup scans are queued until the camera is ready so retired camera instances cannot change later journeys. Rejected off-route reports do not claim a successful confirmation. Detection errors show readable feedback without logging raw QR contents.
+
+An earlier note about an incomplete `public/app.js` referred to historical snapshots. Current main and this combined branch have complete, syntax-checked initialization; no such blocker remains. Integration-specific changes preserve the hidden `confirm` and `last` hooks used by Pat, while the visible student controls remain concise. Triggers are now limited to intermediate checkpoints on the actual displayed route, not adjacent off-route nodes.
 
 No deployment is part of this source change. See README.md for local running instructions and CHECKPOINT-CONFIRMATION.md for the student flow.

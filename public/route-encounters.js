@@ -11,7 +11,7 @@ export function encounterOrigins(building){
 export function planEncounter(building,route,random=Math.random){
   if(route.length<2)return null;
   const origins=encounterOrigins(building);
-  const candidates=building.nodes.filter(node=>node.qrCodeId&&node.id!==route[0]&&node.id!==route.at(-1)&&graphDistance(building,node.id,route,1)<=1)
+  const candidates=building.nodes.filter(node=>node.qrCodeId&&route.slice(1,-1).includes(node.id))
     .map(node=>({checkpointId:node.id,origins:origins.filter(origin=>graphDistance(building,node.id,[origin.id],3)<=3)})).filter(candidate=>candidate.origins.length);
   if(!candidates.length)return null;const candidate=candidates[Math.floor(random()*candidates.length)];
   return {checkpointId:candidate.checkpointId,roomId:candidate.origins[Math.floor(random()*candidate.origins.length)].id};
@@ -37,14 +37,14 @@ export function createEncounterDirector({building,onEncounter,onPause=()=>{},onS
     startTrip(snapshot){
       if(disposed)return;close();const saved=snapshot.encounterState;
       const valid=saved&&saved.tripId===snapshot.tripId&&typeof saved.consumed==='boolean';
-      const storedPlan=valid&&saved.plan&&building.nodes.some(n=>n.id===saved.plan.checkpointId&&n.qrCodeId)&&encounterOrigins(building).some(n=>n.id===saved.plan.roomId)?saved.plan:null;
+      const storedPlan=valid&&saved.plan&&snapshot.route.includes(saved.plan.checkpointId)&&building.nodes.some(n=>n.id===saved.plan.checkpointId&&n.qrCodeId)&&encounterOrigins(building).some(n=>n.id===saved.plan.roomId)?saved.plan:null;
       trip={id:snapshot.tripId,destination:snapshot.destination,position:snapshot.position,route:[...snapshot.route],consumed:valid&&saved.consumed,plan:storedPlan||planEncounter(building,snapshot.route,random)};persist();status(trip.consumed?'You’ve met this journey’s quest ghost.':trip.plan?'A quest ghost may meet you along the way.':'Follow the route to your destination.');
     },
     reroute(snapshot){
       if(disposed||!trip||snapshot.tripId!==trip.id)return;
       close();update(snapshot);
       // Rerouting never replenishes a consumed encounter.
-      if(!trip.consumed&&(!trip.plan||graphDistance(building,trip.plan.checkpointId,snapshot.route,1)>1))trip.plan=planEncounter(building,snapshot.route,random);persist();
+      if(!trip.consumed&&(!trip.plan||!snapshot.route.slice(1,-1).includes(trip.plan.checkpointId)))trip.plan=planEncounter(building,snapshot.route,random);persist();
     },
     confirmed(snapshot){
       if(disposed||!trip||snapshot.tripId!==trip.id||snapshot.confirmed!==true||snapshot.destination!==trip.destination)return;

@@ -3,7 +3,9 @@ import {buildNavigationPlan} from './navigation-plan.js';
 
 const $ = id => document.getElementById(id);
 
-const STORAGE_KEY = "campus-ghost-halle-v2";
+const STORAGE_KEY = "campus-ghost-journey-v3";
+const LEGACY_STORAGE_KEY = "campus-ghost-halle-v2";
+let courses = [];
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 let building = null;
@@ -33,7 +35,7 @@ function bindCheckpointEntry(){
     }
     $('checkpoint').value=checkpoint.id;updateCheckpointLink();
     const result=confirmCheckpoint({source:'manual-code'});
-    if(!result?.ok)return;
+    if(!result?.ok){feedback.textContent=$('copyStatus').textContent||'This checkpoint could not be confirmed.';feedback.dataset.state='error';input.setAttribute('aria-invalid','true');return;}
     input.value=checkpoint.id;input.setAttribute('aria-invalid','false');feedback.dataset.state='success';
     feedback.textContent=result.changed?`You’re at ${checkpoint.label} (${checkpoint.id}).`:`You’re already at ${checkpoint.label} (${checkpoint.id}).`;
   });
@@ -43,8 +45,9 @@ const newTripId = () => globalThis.crypto?.randomUUID?.() || ('trip-' + Date.now
 function ensureNavigationPlan(){
   if(!journey)return;
   const plan=journey.navigationPlan;
-  if(!plan||!Array.isArray(plan.route)||!Array.isArray(plan.stops)||plan.route.at(-1)!==journey.destination||!plan.route.includes(journey.last)||!plan.route.every(id=>getNode(id))){
-    journey.navigationPlan=buildNavigationPlan(building,journey.last,journey.destination,findRoute);
+  if(!plan||!Array.isArray(plan.route)||!Array.isArray(plan.stops)||plan.route.at(-1)!==journey.destination||!plan.route.includes(journey.last)||!plan.route.every(id=>getNode(id))||!plan.route.slice(1).every((id,index)=>building.edges.some(([a,b])=>(a===plan.route[index]&&b===id)||(b===plan.route[index]&&a===id)))){
+    const original=buildNavigationPlan(building,getNode(journey.start)?journey.start:journey.last,journey.destination,findRoute);
+    journey.navigationPlan=original.route.includes(journey.last)?original:buildNavigationPlan(building,journey.last,journey.destination,findRoute);
   }
 }
 function remainingRoute(){
@@ -103,7 +106,7 @@ function saveJourney() {
 function loadJourney() {
   try {
     return JSON.parse(
-      localStorage.getItem(STORAGE_KEY) || "null"
+      localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || "null"
     );
   } catch {
     return null;
@@ -117,83 +120,23 @@ function makeOption(id, label) {
   return el;
 }
 
-// Find a route minimizing drawing-coordinate length, not verified walking distance.
-// Connections must be verified against the real floor.
+// Preserve main's fewest-map-connections route; these are not measured distances.
 function findRoute(startId, endId) {
-  if (!getNode(startId) || !getNode(endId)) {
-    return null;
-  }
-
-  const distances = new Map();
-  const previous = new Map();
-  const unvisited = new Set(nodes.keys());
-
-  for (const id of nodes.keys()) {
-    distances.set(id, Infinity);
-  }
-
-  distances.set(startId, 0);
-
-  while (unvisited.size > 0) {
-    let current = null;
-    let best = Infinity;
-
-    for (const id of unvisited) {
-      const distance = distances.get(id);
-      if (distance < best) {
-        best = distance;
-        current = id;
-      }
-    }
-
-    if (current === null) break;
+  if (!getNode(startId) || !getNode(endId)) return null;
+  const queue = [startId], previous = new Map([[startId, null]]);
+  while (queue.length) {
+    const current = queue.shift();
     if (current === endId) break;
-
-    unvisited.delete(current);
-
-    for (const [a, b] of building.edges) {
-      let neighbor = null;
-
-      if (a === current) neighbor = b;
-      if (b === current) neighbor = a;
-
-      if (!neighbor || !unvisited.has(neighbor)) {
-        continue;
-      }
-
-      const p = getNode(current);
-      const q = getNode(neighbor);
-
-      if (!p || !q) continue;
-
-      const weight = Math.hypot(
-        q.x - p.x,
-        q.y - p.y
-      );
-
-      const candidate =
-        distances.get(current) + weight;
-
-      if (candidate < distances.get(neighbor)) {
-        distances.set(neighbor, candidate);
-        previous.set(neighbor, current);
-      }
+    for (const edge of building.edges) {
+      let next = null;
+      if (edge[0] === current) next = edge[1]; else if (edge[1] === current) next = edge[0];
+      if (next && !previous.has(next) && getNode(next)) { previous.set(next, current); queue.push(next); }
     }
   }
-
-  if (!Number.isFinite(distances.get(endId))) {
-    return null;
-  }
-
-  const result = [];
-  let current = endId;
-
-  while (current !== undefined) {
-    result.unshift(current);
-    current = previous.get(current);
-  }
-
-  return result[0] === startId ? result : null;
+  if (!previous.has(endId)) return null;
+  const result = []; let cursor = endId;
+  while (cursor !== null) { result.unshift(cursor); cursor = previous.get(cursor); }
+  return result;
 }
 
 function svg(tag, attributes = {}, parent = $("map")) {
@@ -276,12 +219,12 @@ function draw(route = null) {
       cx: n.x,
       cy: n.y,
       r: 9,
-      fill: "#087b50",
+      fill: journey?.last === n.id ? "#2563eb" : "#087b50",
       stroke: "#ffffff",
       "stroke-width": 3,
       tabindex: 0,
       role: "button",
-      "aria-label": `Start at ${n.label}`
+      "aria-label": `Confirm checkpoint: ${n.label}`
     });
 
     marker.style.cursor = "pointer";
@@ -321,7 +264,7 @@ function draw(route = null) {
       "pointer-events": "none"
     });
 
-    label.textContent = n.id;
+    label.textContent = n.label;
   }
 
   // Blue ring indicates last confirmed location.
@@ -358,6 +301,28 @@ function updateCheckpointLink() {
     : "Confirm selected checkpoint";
 }
 
+function selectedCourse() { return courses.find(course => course.id === $("course").value) || null; }
+function renderCourse() {
+  const course = selectedCourse(), card = $("courseCard"); card.replaceChildren();
+  if (!course) {
+    const h = document.createElement("h3"), p = document.createElement("p");
+    h.textContent = "No course records yet"; p.textContent = "Add verified course details to public/courses.json."; card.append(h, p); return;
+  }
+  const h = document.createElement("h3"), p = document.createElement("p"), list = document.createElement("dl"), badge = document.createElement("p");
+  h.textContent = course.title; p.textContent = course.description || "No description supplied.";
+  [["Professor", course.professor || "Not supplied"], ["Meeting", course.meeting || "Not supplied"], ["Room", course.room || "Not supplied"], ["Milestones", Array.isArray(course.milestones) && course.milestones.length ? course.milestones.join("; ") : "Not supplied"]].forEach(([key, value]) => {
+    const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = key; dd.textContent = value; list.append(dt, dd);
+  });
+  badge.className = "small-note";
+  badge.textContent = course.demo ? "DEMO PLACEHOLDER — replace with verified course information." : "Project dataset information; verify with official EMU sources.";
+  card.append(h, p, list, badge);
+}
+function fillCourses() {
+  const select = $("course"); select.replaceChildren();
+  courses.forEach(course => select.append(makeOption(course.id, course.title)));
+  renderCourse();
+}
+
 function updateProgress(route) {
   const bar = $("progress");
   if (!bar) return;
@@ -378,6 +343,13 @@ function updateProgress(route) {
   bar.setAttribute('aria-label',`Journey progress: ${Math.max(0,index)} of ${Math.max(0,stops.length-1)} checkpoints reached.`);
 }
 
+function nextCheckpointHelp(route) {
+  if (!journey) return 'Choose a green checkpoint marker, scan a code, or enter a checkpoint to set your starting point.';
+  if (journey.last === journey.destination) return 'Destination checkpoint confirmed.';
+  if (!route?.length) return 'No connected route exists in the supplied map graph.';
+  return 'Follow the orange route through the marked checkpoints.';
+}
+
 function render(message = "") {
   if (!building) return;
 
@@ -390,6 +362,9 @@ function render(message = "") {
 
   draw(route);
   updateProgress(route);
+  setText('progressLabel', $('progress').value + '%');
+  setText('journeyStatus', !journey ? 'Ready when you are' : journey.last === destinationId ? 'Destination confirmed' : route?.length ? 'Route preview' : 'Route unavailable');
+  setText('next-checkpoint-help', nextCheckpointHelp(route));
   updateCheckpointLink();
   const nextId=getNextCheckpoint(),nextNode=getNode(nextId);
   setText('confirmed-checkpoint',journey?`${getNode(journey.last).label} (${journey.last})`:'Scan a code or enter a checkpoint');
@@ -465,15 +440,22 @@ function render(message = "") {
 }
 
 function confirmCheckpoint(event) {
+  $('confirm').dataset.confirmationAccepted='false';
   if(navigationPaused)return {ok:false};
   const checkpointId=event?.source==='demo-next'?getNextCheckpoint():$('checkpoint').value,destinationId=$('destination').value;
   if((!isCheckpoint(getNode(checkpointId))&&!(event?.source==='demo-next'&&getNode(checkpointId)))||!getNode(destinationId))return {ok:false};
-  if(journey?.last===checkpointId){setText('temperature',journey.last===journey.destination?'You’ve arrived!':`You’re already at ${getNode(checkpointId).label}.`);return {ok:true,changed:false};}
+  if(journey?.last===checkpointId){$('confirm').dataset.confirmationAccepted='true';setText('temperature',journey.last===journey.destination?'You’ve arrived!':`You’re already at ${getNode(checkpointId).label}.`);return {ok:true,changed:false};}
+  if (journey && journey.destination === destinationId && journey.last !== journey.destination && !remainingRoute().includes(checkpointId)) {
+    setText('copyStatus', "That checkpoint is not on the current route. Use I'm lost to restart from a known checkpoint.");
+    return {ok:false};
+  }
+  setText('copyStatus', '');
+  $('confirm').dataset.confirmationAccepted='true';
   const previous=journey;
   const startsNewTrip=!previous||(previous.last===previous.destination&&checkpointId!==previous.last);
   journey={...previous,last:checkpointId,destination:destinationId};
   if(isCheckpoint(getNode(checkpointId)))$('checkpoint').value=checkpointId;
-  if(startsNewTrip)journey.questEncounter={tripId:newTripId(),consumed:false,plan:null};
+  if(startsNewTrip){journey.start=checkpointId;journey.navigationPlan=null;journey.questEncounter={tripId:newTripId(),consumed:false,plan:null};}
   ensureNavigationPlan();
   ensureTripMetadata();
   const method=event?.source||$('confirm').dataset.confirmationMethod||'manual';
@@ -493,6 +475,7 @@ function changeDestination() {
   // Mid-trip changes cancel the panel without replenishing this trip's encounter.
   if (journey) {
     const startsNewTrip=journey.last===journey.destination&&$("destination").value!==journey.destination;
+    journey.start = journey.last;
     journey.destination = $("destination").value;
     if(startsNewTrip)journey.questEncounter={tripId:newTripId(),consumed:false,plan:null};
     ensureTripMetadata();
@@ -515,9 +498,24 @@ function resetJourney() {
 
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch {}
 
   render();
+}
+
+// Preserve main's lost/respawn control, canceling an encounter through resetJourney.
+let respawnTimer = null;
+function lostAndReset() {
+  if (respawnTimer !== null) window.clearTimeout(respawnTimer);
+  resetJourney();
+  const scene = $('scene');
+  scene.classList.remove('ghost-out'); void scene.offsetWidth; scene.classList.add('ghost-out');
+  scene.dataset.mood='lost';
+  setText('journeyStatus','Choose a new checkpoint');
+  setText('temperature','The ghost is respawning!');
+  setText('instruction','Choose a checkpoint you recognize to restart your route.');
+  respawnTimer=window.setTimeout(()=>{scene.classList.remove('ghost-out');respawnTimer=null;},1050);
 }
 
 async function copyCheckpointLink() {
@@ -538,8 +536,7 @@ async function copyCheckpointLink() {
   }
 }
 
-// Preserve the AI assistant interface.
-// This requires a compatible server-side endpoint.
+// Use main's assistant contract and the current confirmed route context.
 async function askGhost(event) {
   event.preventDefault();
 
@@ -558,13 +555,16 @@ async function askGhost(event) {
       },
       body: JSON.stringify({
         question,
-        courseId: $("chat-course").value
+        courseId: selectedCourse()?.id || null,
+        startId: journey?.last || null,
+        destinationId: $("destination").value || null,
+        routeIds: journey && remainingRoute().length ? remainingRoute() : null
       })
     });
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.reply || `Assistant request failed: HTTP ${response.status}`);
+      throw new Error(data.error || data.reply || `Assistant request failed: HTTP ${response.status}`);
     }
 
     const answer = data.reply;
@@ -626,15 +626,20 @@ async function initialize() {
       );
     }
 
-    // Every navigation node can be a destination.
-    for (const n of building.nodes) {
+    if(nodes.size!==building.nodes.length)throw Error("Building node IDs must be unique.");
+    for(const edge of building.edges)if(!Array.isArray(edge)||edge.length!==2||!getNode(edge[0])||!getNode(edge[1]))throw Error("A map connection references an unknown node.");
+    if(!checkpoints.length)throw Error("Add at least one QR checkpoint.");
+    const destinations=(building.destinations||checkpoints.map(n=>n.id)).filter(id=>getNode(id));
+    if(!destinations.length)throw Error("Add at least one destination.");
+    for (const id of destinations) {
+      const n=getNode(id);
       $("destination").append(
         makeOption(n.id, n.label)
       );
     }
 
-    $("checkpoint").value = "Q8";
-    $("destination").value = "Q5";
+    if(isCheckpoint(getNode("Q8")))$("checkpoint").value="Q8";
+    if(destinations.includes("Q5"))$("destination").value="Q5";
 
     // Restore previous journey if its nodes still exist.
     const saved = loadJourney();
@@ -642,13 +647,14 @@ async function initialize() {
     if (
       saved &&
       getNode(saved.last) &&
-      getNode(saved.destination)
+      destinations.includes(saved.destination)
     ) {
       journey = saved;
       if(isCheckpoint(getNode(saved.last)))$("checkpoint").value = saved.last;
       $("destination").value = saved.destination;
     }
 
+    if(journey){ensureTripMetadata();ensureNavigationPlan();saveJourney();}
     configureEncounters();
 
     // Support both old and new QR URL formats.
@@ -696,14 +702,17 @@ async function initialize() {
       copyCheckpointLink
     );
 
-    // Server chat is explicitly about its existing fictional sample courses, not live map facts.
+    // Preserve main's class cards and route-aware chat; a course-data failure does not disable navigation.
     try {
-      const courseResponse=await fetch('courses.json');
-      if(!courseResponse.ok)throw Error('Course data unavailable');
-      const courseData=await courseResponse.json();
-      if(!Array.isArray(courseData)||!courseData.length)throw Error('No sample courses');
-      for(const course of courseData)$('chat-course').append(makeOption(course.id,course.title));
-    }catch{ $('ask').disabled=true;setText('reply','Sample course chat is unavailable. Library navigation still works.'); }
+      const response=await fetch('courses.json');
+      if(!response.ok)throw Error('Course data unavailable');
+      courses=await response.json();
+      if(!Array.isArray(courses))throw Error('Invalid course data');
+      fillCourses();
+    } catch { courses=[];fillCourses();setText('reply','Course details are unavailable. You can still ask about the route.'); }
+    $('course').addEventListener('change',renderCourse);
+    $('lost').addEventListener('click',lostAndReset);
+    document.querySelectorAll('[data-question]').forEach(button=>button.addEventListener('click',()=>{$('question').value=button.dataset.question;$('question').focus();}));
 
     $("chat").addEventListener(
       "submit",

@@ -16,6 +16,7 @@ const toonSource=await readFile(new URL('../public/quest-toon.js',import.meta.ur
 
 async function boot({storage=storageFixture(),url='http://localhost:3002/',quest=false}={}){
  const ui=documentFixture(),clock=clockFixture(),offers=[],results=[],methods=[],requests=[],window={...target(),location:new URL(url),matchMedia:()=>({matches:true})};
+ window.setTimeout=clock.setTimeout;window.clearTimeout=clock.clearTimeout;
  window.history={replaceState(_,__,next){window.location.href=new URL(next,window.location.href).href;}};
  let director,panelReady,lastScanner,stops=0,waitCallback;
  const installRouteEncounters=options=>{
@@ -47,7 +48,8 @@ test('Halle data uses only existing checkpoint origins and dynamic map dimension
  assert.equal(encounterOrigins(building).length,7);assert.ok(encounterOrigins(building).every(n=>n.qrCodeId));
  const app=await boot();try{
   const route=app.app.findRoute('Q8','Q5');assert.ok(route.includes('N10'));assert.equal(route.includes('Q4'),false);
-  const plan=planEncounter(building,route,()=>0);assert.equal(plan.checkpointId,'Q4');assert.ok(building.nodes.some(n=>n.id===plan.roomId&&n.qrCodeId));
+  assert.equal(planEncounter(building,route,()=>0),null,'A checkpoint outside the displayed itinerary cannot be an encounter trigger');
+  const plan=planEncounter(building,buildNavigationPlan(building,'Q8','Q5',app.app.findRoute).route,()=>0);assert.equal(plan.checkpointId,'Q4');assert.ok(building.nodes.some(n=>n.id===plan.roomId&&n.qrCodeId));
   const marked=structuredClone(building);marked.nodes.find(n=>n.id==='Q8').encounterOrigin=true;assert.deepEqual(encounterOrigins(marked).map(n=>n.id),['Q8']);
   assert.equal(app.$('map').attrs.viewBox,'0 0 600 750');assert.equal(app.$('map').children.find(n=>n.tagName==='image').attrs.href,'halle-map.png');
  }finally{app.director.destroy();}
@@ -63,13 +65,13 @@ test('checkpoint itinerary visibly includes Q4 and deterministically triggers th
  }finally{app.director.destroy();}
 });
 
-test('NEXT demo control uses the QR handler, updates distinct labels/progress and ignores repeated current reports',async()=>{
+test('Next-checkpoint control uses the QR handler, updates distinct labels/progress and ignores repeated current reports',async()=>{
  const storage=storageFixture();createProgressStore(storage).award('preexisting',80);const app=await boot({storage});
  try{
   assert.equal(app.$('confirm-next').disabled,true);app.$('checkpoint').value='Q8';await app.$('confirm').click();
   assert.match(app.$('confirmed-checkpoint').textContent,/Q8/);assert.match(app.$('next-checkpoint').textContent,/Q4/);assert.match(app.$('journey-destination').textContent,/Q5/);assert.equal(app.$('progress').value,0);
   assert.ok(app.$('map').children.find(n=>n.tagName==='polyline').attrs.points.includes('384,302'));
-  const stored=storage.getItem('campus-ghost-halle-v2');await app.$('confirm').click();assert.equal(storage.getItem('campus-ghost-halle-v2'),stored);assert.equal(app.offers.length,0);assert.match(app.$('temperature').textContent,/already at/);
+  const stored=storage.getItem('campus-ghost-journey-v3');await app.$('confirm').click();assert.equal(storage.getItem('campus-ghost-journey-v3'),stored);assert.equal(app.offers.length,0);assert.match(app.$('temperature').textContent,/already at/);
   await app.$('confirm-next').click();assert.equal(app.app.getJourney().last,'Q4');assert.equal(app.app.getJourney().lastConfirmationMethod,'demo-next');assert.equal(app.methods.at(-1),'demo-next');assert.equal(app.$('progress').value,50);assert.equal(app.offers.length,1);assert.equal(app.$('confirm-next').disabled,true);
   app.offers[0].handlers.dismiss();assert.equal(app.$('confirm-next').disabled,false);assert.match(app.$('next-checkpoint').textContent,/Q5/);assert.equal(app.app.getJourney().last,'Q4');
   await app.$('confirm-next').click();assert.equal(app.app.getJourney().last,'Q5');assert.equal(app.$('progress').value,100);assert.equal(app.$('confirm-next').disabled,true);assert.equal(app.offers.length,1);assert.equal(createProgressStore(storage).snapshot().xp,80);
@@ -87,12 +89,12 @@ test('typed checkpoint entry normalizes valid IDs, rejects invalid codes without
  try{
   assert.equal(app.$('checkpoint-code-form').dataset.bound,'true');assert.equal(app.$('checkpoint-code-form').hidden,true);
   await app.$('checkpoint-code-toggle').click();assert.equal(app.$('checkpoint-code-form').hidden,false);assert.equal(app.$('checkpoint-code-toggle').attrs['aria-expanded'],'true');
-  for(const invalid of ['', '  ', 'Q3','N10','not-a-code']){const before=storage.getItem('campus-ghost-halle-v2'),selected=app.$('checkpoint').value;await submit(invalid);assert.equal(storage.getItem('campus-ghost-halle-v2'),before);assert.equal(app.app.getJourney(),null);assert.equal(app.$('checkpoint').value,selected);assert.equal(app.$('checkpoint-code').attrs['aria-invalid'],'true');assert.equal(app.$('checkpoint-code-feedback').dataset.state,'error');}
+  for(const invalid of ['', '  ', 'Q3','N10','not-a-code']){const before=storage.getItem('campus-ghost-journey-v3'),selected=app.$('checkpoint').value;await submit(invalid);assert.equal(storage.getItem('campus-ghost-journey-v3'),before);assert.equal(app.app.getJourney(),null);assert.equal(app.$('checkpoint').value,selected);assert.equal(app.$('checkpoint-code').attrs['aria-invalid'],'true');assert.equal(app.$('checkpoint-code-feedback').dataset.state,'error');}
   await submit('  q8\n');assert.equal(app.app.getJourney().last,'Q8');assert.equal(app.app.getJourney().lastConfirmationMethod,'manual-code');assert.equal(app.$('checkpoint-code').value,'Q8');assert.match(app.$('checkpoint-code-feedback').textContent,/Entrance To Floor 2/);assert.equal(app.$('confirm-next').textContent,'I’ve reached Atrium East');
-  const before=storage.getItem('campus-ghost-halle-v2');await submit('q8');assert.equal(storage.getItem('campus-ghost-halle-v2'),before);assert.match(app.$('checkpoint-code-feedback').textContent,/already at/);assert.equal(app.offers.length,0);
-  await submit('  q3 ');assert.equal(storage.getItem('campus-ghost-halle-v2'),before);assert.equal(app.$('confirmed-checkpoint').textContent,'Entrance To Floor 2 (Q8)');
+  const before=storage.getItem('campus-ghost-journey-v3');await submit('q8');assert.equal(storage.getItem('campus-ghost-journey-v3'),before);assert.match(app.$('checkpoint-code-feedback').textContent,/already at/);assert.equal(app.offers.length,0);
+  await submit('  q3 ');assert.equal(storage.getItem('campus-ghost-journey-v3'),before);assert.equal(app.$('confirmed-checkpoint').textContent,'Entrance To Floor 2 (Q8)');
   await submit('\tq4  ');assert.equal(app.app.getJourney().last,'Q4');assert.equal(app.methods.at(-1),'manual-code');assert.equal(app.offers.length,1);assert.equal(app.$('checkpoint-code').disabled,true);assert.equal(app.$('checkpoint-code-toggle').disabled,true);
-  app.offers[0].handlers.dismiss();assert.equal(app.$('checkpoint-code').disabled,false);const consumed=storage.getItem('campus-ghost-halle-v2');await submit(' Q4 ');assert.equal(storage.getItem('campus-ghost-halle-v2'),consumed);assert.equal(app.offers.length,1);
+  app.offers[0].handlers.dismiss();assert.equal(app.$('checkpoint-code').disabled,false);const consumed=storage.getItem('campus-ghost-journey-v3');await submit(' Q4 ');assert.equal(storage.getItem('campus-ghost-journey-v3'),consumed);assert.equal(app.offers.length,1);
   assert.equal(app.$('confirm-next').textContent,'I’ve reached Room 217 (Faculty)');await app.$('confirm-next').click();assert.equal(app.app.getJourney().last,'Q5');assert.equal(app.$('temperature').textContent,'You’ve arrived!');assert.equal(app.$('confirm-next').hidden,true);assert.equal(app.$('checkpoint-code-feedback').textContent,'');assert.equal(app.$('checkpoint-code').value,'');
   await submit('q5');assert.equal(app.$('temperature').textContent,'You’ve arrived!');assert.equal(app.offers.length,1);assert.equal(createProgressStore(storage).snapshot().xp,80);
  }finally{app.director.destroy();}
@@ -116,7 +118,7 @@ test('real Pat scanner → James confirmCheckpoint → one quest → complete �
    await app.scan('Q8');assert.equal(app.offers.length,0);const id=app.app.getJourney().questEncounter.tripId;
    await app.scan('Q4','qr');const retiredScanner=app.scanner;await app.panelReady;assert.equal(app.offers.length,1);assert.equal(app.methods.at(-1),'qr');assert.ok(app.stops>=1);assert.equal(app.$('scan-now').disabled,true);
    const savedBefore=app.app.getJourney();assert.equal(savedBefore.last,'Q4');assert.equal(savedBefore.destination,'Q5');assert.equal(savedBefore.questEncounter.consumed,true);assert.equal(savedBefore.questEncounter.tripId,id);
-   const marker=app.$('map').children.find(n=>n.attrs['aria-label']==='Start at Computers (North)');await marker.click();assert.equal(app.app.getJourney().last,'Q4');assert.equal(app.$('checkpoint').value,'Q4');
+   const marker=app.$('map').children.find(n=>n.attrs['aria-label']==='Confirm checkpoint: Computers (North)');await marker.click();assert.equal(app.app.getJourney().last,'Q4');assert.equal(app.$('checkpoint').value,'Q4');
    app.button('Play trivia').click();
    for(let i=0;i<10;i++){const prompt=app.all().find(n=>n.tagName==='h3').textContent,q=bank.trivia.questions.find(q=>q.prompt===prompt);app.button(q.options[q.answerIndex]).click();if(i<9)app.button('Next question').click();}
    assert.equal(app.results.at(-1).xpAwarded,100);assert.equal(createProgressStore(storage).snapshot().xp,180);app.clock.flush();
@@ -124,7 +126,7 @@ test('real Pat scanner → James confirmCheckpoint → one quest → complete �
    assert.equal(app.all().some(n=>n.textContent==='Give me a game instead'),false);
    await app.$('scan-now').onclick();await retiredScanner.read('http://localhost:3002/?checkpoint=Q1');assert.equal(app.app.getJourney().last,'Q4','Retired camera callbacks must not move the new journey');
    await app.scan('Q4');assert.equal(app.offers.length,1);await app.scan('Q5');assert.match(app.$('temperature').textContent,/arrived/);assert.equal(app.$('scene').dataset.mood,'arrived');assert.equal(app.offers.length,1);assert.equal(app.$('confirm-next').hidden,true);
-   app.$('destination').value='Q6';app.app.changeDestination();assert.notEqual(app.app.getJourney().questEncounter.tripId,id);assert.equal(app.app.getJourney().questEncounter.consumed,false);assert.equal(app.offers.length,1);
+   app.$('destination').value='Q8';app.app.changeDestination();assert.notEqual(app.app.getJourney().questEncounter.tripId,id);assert.equal(app.app.getJourney().questEncounter.consumed,false);assert.equal(app.offers.length,1);
    await app.scan(app.director.snapshot().plan.checkpointId);await app.panelReady;assert.equal(app.offers.length,2);app.button('Play trivia').click();
    for(let i=0;i<10;i++){const prompt=app.all().find(n=>n.tagName==='h3').textContent,q=bank.trivia.questions.find(q=>q.prompt===prompt);app.button(q.options[q.answerIndex]).click();if(i<9)app.button('Next question').click();}
    assert.equal(app.results.at(-1).xpAwarded,0);assert.equal(createProgressStore(storage).snapshot().xp,180);app.clock.flush();
@@ -158,9 +160,34 @@ test('dismissal, destination changes, reset and stale callbacks preserve locatio
 
 test('map keyboard confirmations and chat use the preserved interfaces with real course IDs',async()=>{
  const app=await boot();try{
-  const marker=app.$('map').children.find(n=>n.attrs['aria-label']==='Start at Entrance To Floor 2');await marker.dispatchEvent(new FakeEvent('keydown',{key:'Enter'}));assert.equal(app.app.getJourney().last,'Q8');
-  app.$('question').value='What is this course about?';app.$('chat-course').value='bio';await app.$('chat').dispatchEvent(new FakeEvent('submit'));
-  assert.deepEqual(app.requests,[{file:'/api/ghost',body:{question:'What is this course about?',courseId:'bio'}}]);assert.match(app.$('reply').textContent,/Sample Biology/);
+  const marker=app.$('map').children.find(n=>n.attrs['aria-label']==='Confirm checkpoint: Entrance To Floor 2');await marker.dispatchEvent(new FakeEvent('keydown',{key:'Enter'}));assert.equal(app.app.getJourney().last,'Q8');
+  app.$('question').value='What is this course about?';app.$('course').value='demo-biology';await app.$('chat').dispatchEvent(new FakeEvent('submit'));
+  assert.deepEqual(app.requests,[{file:'/api/ghost',body:{question:'What is this course about?',courseId:'demo-biology',startId:'Q8',destinationId:'Q5',routeIds:[...app.app.getJourney().navigationPlan.route]}}]);assert.match(app.$('reply').textContent,/Sample Biology/);
+ }finally{app.director.destroy();}
+});
+
+test('main v3 and legacy journeys retain confirmed position, course cards, stable progress and earned XP',async()=>{
+ for(const key of ['campus-ghost-journey-v3','campus-ghost-halle-v2']){
+  const storage=storageFixture();storage.setItem(key,JSON.stringify({start:'Q8',last:'Q4',destination:'Q5'}));createProgressStore(storage).award('already-earned',80);
+  const app=await boot({storage});try{
+   assert.equal(app.app.getJourney().last,'Q4');assert.equal(app.$('progress').value,50);assert.equal(app.$('progressLabel').textContent,'50%');assert.equal(app.offers.length,0);
+   assert.equal(app.$('course').value,'demo-biology');assert.equal(app.$('courseCard').children[0].textContent,courses[0].title);assert.match(app.$('courseCard').children.at(-1).textContent,/DEMO PLACEHOLDER/);
+   assert.equal(JSON.parse(storage.getItem('campus-ghost-journey-v3')).last,'Q4');assert.equal(createProgressStore(storage).snapshot().xp,80);
+   await app.$('confirm-next').click();assert.equal(app.app.getJourney().last,'Q5');assert.equal(app.$('progressLabel').textContent,'100%');assert.equal(app.$('journeyStatus').textContent,'Destination confirmed');
+   await app.$('lost').click();assert.equal(app.app.getJourney(),null);app.clock.flush();assert.equal(storage.getItem('campus-ghost-journey-v3'),null);assert.equal(storage.getItem('campus-ghost-halle-v2'),null);assert.equal(createProgressStore(storage).snapshot().xp,80);
+  }finally{app.director.destroy();}
+ }
+});
+
+test('off-route reports leave state unchanged; approved printed production QR codes also work locally',async()=>{
+ const app=await boot();try{
+  await app.scan('Q8');const before=JSON.stringify(app.app.getJourney());
+  await app.scan('Q2');assert.equal(JSON.stringify(app.app.getJourney()),before);assert.match(app.$('scan-note').textContent,/not on the current route/);assert.equal(app.offers.length,0);
+  app.$('checkpoint-code').value='q2';await app.$('checkpoint-code-form').dispatchEvent(new FakeEvent('submit'));assert.equal(JSON.stringify(app.app.getJourney()),before);assert.match(app.$('checkpoint-code-feedback').textContent,/not on the current route/);
+  for(const bad of ['http://campus-ghost.onrender.com/?checkpoint=Q4','https://campus-ghost.onrender.com.evil.invalid/?checkpoint=Q4','https://campus-ghost.onrender.com:9999/?checkpoint=Q4','https://campus-ghost.onrender.com/other?checkpoint=Q4']){
+   await app.scanner.read(bad);assert.equal(JSON.stringify(app.app.getJourney()),before);assert.match(app.$('scan-note').textContent,/from this site/);
+  }
+  await app.scanner.read('https://campus-ghost.onrender.com/index.html?checkpoint=q4');assert.equal(app.app.getJourney().last,'Q4');assert.equal(app.offers.length,1);app.offers[0].handlers.dismiss();
  }finally{app.director.destroy();}
 });
 
@@ -215,6 +242,14 @@ test('integration HTTP endpoints serve floor image and quests; existing API retu
  try{
   await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw Error('Server exited early');})]);
   for(const file of ['','halle-map.png','quest-toon.js','quests.html','route-encounters.js','quest-protocol.js'])assert.equal((await fetch('http://127.0.0.1:31990/'+file)).status,200);
-  const response=await fetch('http://127.0.0.1:31990/api/ghost',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:'Overview?',courseId:'bio'})});assert.equal(response.status,200);assert.match((await response.json()).reply,/Sample Biology.*Local demo response/);
+  const response=await fetch('http://127.0.0.1:31990/api/ghost',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:'Overview?',courseId:'demo-biology'})});assert.equal(response.status,200);assert.match((await response.json()).reply,/Sample Biology[\s\S]*Local demo response/);
+  assert.equal((await(await fetch('http://127.0.0.1:31990/api/health')).json()).ok,true);
+  const request=body=>fetch('http://127.0.0.1:31990/api/ghost',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const routeIds=['Q8','N17','N7','Q4','N10','N11','N14','Q5'];
+  const answer=await request({question:'Where is my professor office? Explain my route.',courseId:'demo-biology',startId:'Q8',destinationId:'Q5',routeIds});assert.equal(answer.status,200);const data=await answer.json();assert.equal(data.mode,'local-fallback');assert.match(data.reply,/not listed in the project data/);assert.match(data.reply,/Atrium East/);
+  assert.equal((await request({question:'route?',startId:'Q8',destinationId:'Q5',routeIds:['Q8','Q5']})).status,400);
+  assert.equal((await request({question:''})).status,400);
+  assert.equal((await request(null)).status,400);
+  for(let i=0;i<25;i++){const rate=await request({question:'route?'});if(rate.status===429){assert.match((await rate.json()).error,/wait/);break;}if(i===24)assert.fail('Main request throttling must remain active');}
  }finally{child.kill();await once(child,'exit');}
 });

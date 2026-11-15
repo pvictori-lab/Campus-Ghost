@@ -136,7 +136,12 @@ export async function startQuest({roomId=null,ghostId=null,onComplete=()=>{},sin
   }
   function beginGame(){
     if(disposed||(singleChallenge&&challengeChosen))return;challengeChosen=true;retire();if(disposed)return;
-    const game=chooseInteractiveGame(lastInteractiveId);lastInteractiveId=game.id;active=game;terminal=false;const token=run;
+    // Encounters create a fresh iframe. Remember the previous game for this tab
+    // so closing that frame does not defeat the no-immediate-repeat rule.
+    try{const saved=globalThis.sessionStorage?.getItem('campus-ghost.quests.last-game');if(INTERACTIVE_GAMES.some(game=>game.id===saved))lastInteractiveId=saved;}catch{}
+    const game=chooseInteractiveGame(lastInteractiveId);lastInteractiveId=game.id;
+    try{globalThis.sessionStorage?.setItem('campus-ghost.quests.last-game',game.id);}catch{}
+    active=game;terminal=false;const token=run;
     shell();const gameRoot=node('section');root.append(gameRoot);
     const current=()=>!disposed&&token===run&&active===game;
     const options={onLeave(){if(current())leave();},onRestart(){if(current()&&!singleChallenge)terminal=false;},onComplete(result){
